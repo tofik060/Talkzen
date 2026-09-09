@@ -3,13 +3,14 @@ import { Injectable } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import { Observable } from 'rxjs';
 import { io, Socket as ClientSocket } from 'socket.io-client';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ChatAppService {
-  private REST_API = 'http://localhost:3000/api';
-  private socket_uri = 'http://localhost:3000';
+  private REST_API = environment.Backend_URL;
+  private socket_uri = environment.socket_URI;
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'auth_user';
   Socket: ClientSocket | null = null;
@@ -165,9 +166,9 @@ export class ChatAppService {
     }
     if (image!.startsWith('/uploads') || image!.startsWith('uploads/')) {
       const path = image!.startsWith('/') ? image! : `/${image}`;
-      return `http://localhost:3000${path}`;
+      return `${environment.socket_URI}${path}`;
     }
-    return `http://localhost:3000/${image}`;
+    return `${environment.socket_URI}/${image}`;
   }
 
   chatmsgs(userId?: string, peerId?: string) {

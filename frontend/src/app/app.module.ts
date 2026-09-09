@@ -23,9 +23,10 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { ProfileDialogComponent } from './profile-dialog/profile-dialog.component';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
+import { environment } from '../environments/environment';
 
 const config: SocketIoConfig = {
-  url: 'http://localhost:3000',
+  url: environment.socket_URI,
   options: {
     autoConnect: false,
     auth: {

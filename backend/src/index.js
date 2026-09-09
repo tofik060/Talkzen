@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const port = process.env.PORT || 3000;
+const frontEndUrl = process.env.frontEnd_URL || "http://localhost:4200";
 require("./db/conn");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -46,7 +47,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:4200",
+    origin: frontEndUrl,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -54,7 +55,12 @@ const io = socketIo(server, {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: frontEndUrl,
+    credentials: true,
+  })
+);
 app.use(express.static(path.join(__dirname, "public")));
 const uploadsDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadsDir)) {
