@@ -1,0 +1,198 @@
+<section class="register-page">
+  <div class="register-ambiance" aria-hidden="true"></div>
+
+  <div class="register-shell">
+    <header class="register-brand">
+      <p class="brand-mark">Talkzen</p>
+      <h1 class="brand-title">Create your space</h1>
+      <p class="brand-copy">Set up your profile and start messaging in moments.</p>
+    </header>
+
+    <form
+      class="register-panel"
+      [formGroup]="registerUser"
+      (ngSubmit)="onSubmit()"
+    >
+      <div class="field-grid">
+        <div class="field">
+          <label for="reg-name">Name</label>
+          <input
+            id="reg-name"
+            type="text"
+            formControlName="name"
+            placeholder="Your full name"
+          />
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('name')?.hasError('required') && registerUser.get('name')?.touched"
+          >
+            Name is required
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="reg-email">Email</label>
+          <input
+            id="reg-email"
+            type="email"
+            formControlName="email"
+            placeholder="you@example.com"
+          />
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('email')?.hasError('required') && registerUser.get('email')?.touched"
+          >
+            Email is required
+          </span>
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('email')?.hasError('email') && registerUser.get('email')?.touched"
+          >
+            Please enter a valid email
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="reg-password">Password</label>
+          <input
+            id="reg-password"
+            type="password"
+            formControlName="password"
+            placeholder="Create a password"
+          />
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('password')?.hasError('required') && registerUser.get('password')?.touched"
+          >
+            Password is required
+          </span>
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('password')?.hasError('minlength') && registerUser.get('password')?.touched"
+          >
+            Password must be at least 8 characters
+          </span>
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('password')?.hasError('pattern') && registerUser.get('password')?.touched"
+          >
+            Use letters, a number, and a symbol (e.g. @)
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="reg-phone">Phone</label>
+          <input
+            id="reg-phone"
+            type="tel"
+            formControlName="phone"
+            maxlength="10"
+            minlength="10"
+            placeholder="10-digit number"
+          />
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('phone')?.hasError('required') && registerUser.get('phone')?.touched"
+          >
+            Phone is required
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="reg-confirm">Confirm password</label>
+          <input
+            id="reg-confirm"
+            type="password"
+            formControlName="confirmPassword"
+            placeholder="Repeat your password"
+          />
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('confirmPassword')?.hasError('required') && registerUser.get('confirmPassword')?.touched"
+          >
+            Confirm password is required
+          </span>
+          <span
+            class="field-error"
+            *ngIf="registerUser.hasError('passwordMismatch') && registerUser.get('confirmPassword')?.touched"
+          >
+            Passwords must match
+          </span>
+        </div>
+
+        <div class="field">
+          <label for="reg-location">Location</label>
+          <input
+            id="reg-location"
+            type="text"
+            formControlName="location"
+            placeholder="City or region"
+          />
+          <span
+            class="field-error"
+            *ngIf="registerUser.get('location')?.hasError('required') && registerUser.get('location')?.touched"
+          >
+            Location is required
+          </span>
+        </div>
+      </div>
+
+      <div class="avatar-picker">
+        <div class="avatar-picker-label">Choose avatar <span class="optional">(optional)</span></div>
+        <div class="avatar-grid">
+          <button
+            type="button"
+            class="avatar-option avatar-initials-option"
+            [class.selected]="!selectedAvatar"
+            (click)="clearAvatar()"
+            aria-label="Use name initials"
+          >
+            <span class="avatar-initials-preview">
+              {{ chatAppService.getInitials(registerUser.get('name')?.value) }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="avatar-option"
+            *ngFor="let avatar of avatars"
+            [class.selected]="selectedAvatar === avatar.path"
+            (click)="selectAvatar(avatar.path)"
+            [attr.aria-label]="avatar.label"
+          >
+            <img [src]="avatar.path" [alt]="avatar.label" />
+          </button>
+        </div>
+        <p class="avatar-hint" *ngIf="!selectedAvatar">
+          No avatar selected — your initials will be used from your name.
+        </p>
+      </div>
+
+      <div class="actions">
+        <button
+          class="btn-primary"
+          type="submit"
+          [disabled]="registerUser.invalid"
+        >
+          Create account
+        </button>
+        <button
+          class="btn-ghost"
+          type="button"
+          (click)="reset()"
+          [disabled]="registerUser.invalid"
+        >
+          Discard
+        </button>
+      </div>
+
+      <p class="field-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </p>
+
+      <p class="login-link">
+        Already a member?
+        <a routerLink="/">Sign in</a>
+      </p>
+    </form>
+  </div>
+</section>

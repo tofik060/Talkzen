@@ -1,0 +1,76 @@
+<section class="login-page">
+  <div class="login-ambiance" aria-hidden="true"></div>
+
+  <div class="login-shell">
+    <header class="login-brand">
+      <p class="brand-mark">Talkzen</p>
+      <h1 class="brand-title">Welcome back</h1>
+      <p class="brand-copy">Sign in to continue your conversations.</p>
+    </header>
+
+    <form class="login-panel" (ngSubmit)="login()">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input
+          id="login-email"
+          #emailControl="ngModel"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="you@example.com"
+          email
+          required
+        />
+        <div
+          class="field-error"
+          *ngIf="emailControl.invalid && (emailControl.dirty || emailControl.touched)"
+        >
+          <span *ngIf="emailControl.errors?.['required']">Email is required</span>
+          <span *ngIf="emailControl.errors?.['email']">Please enter a valid email</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input
+          id="login-password"
+          #passwordControl="ngModel"
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          placeholder="Enter your password"
+          required
+        />
+        <div
+          class="field-error"
+          *ngIf="passwordControl.invalid && (passwordControl.dirty || passwordControl.touched)"
+        >
+          <span *ngIf="passwordControl.errors?.['required']">Password is required</span>
+        </div>
+      </div>
+
+      <div class="login-meta">
+        <label class="remember">
+          <input type="checkbox" name="remember" />
+          <span>Remember me</span>
+        </label>
+        <a class="forgot" routerLink="/">Forgot password?</a>
+      </div>
+
+      <p class="form-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <button
+        class="btn-primary"
+        type="submit"
+        [disabled]="emailControl.invalid || passwordControl.invalid"
+      >
+        Sign in
+      </button>
+
+      <p class="signup-link">
+        Not a member?
+        <a routerLink="/registration">Create account</a>
+      </p>
+    </form>
+  </div>
+</section>

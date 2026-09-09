@@ -1,0 +1,40 @@
+<nav class="navbar navbar-expand-lg nav-bar" *ngIf="showTopNav">
+  <div class="container-fluid nav-inner">
+    <a class="navbar-brand brand-link" routerLink="/">
+      <img
+        class="brand-logo"
+        src="assets/logo/Talkzen%20Logo.png"
+        alt="Talkzen"
+      />
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <div class="nav-actions ms-auto">
+        <ng-container *ngIf="!isLoggedIn(); else loggedInActions">
+          <a class="btn-signin" routerLink="/">Sign in</a>
+          <a class="btn-signup" routerLink="/registration">Sign up</a>
+        </ng-container>
+
+        <ng-template #loggedInActions>
+          <a class="btn-signin" routerLink="/chat-application">Chat</a>
+          <button class="btn-signup" type="button" (click)="logout()">
+            Log out
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</nav>
+<router-outlet></router-outlet>

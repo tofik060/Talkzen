@@ -1,0 +1,18 @@
+<div class="confirm-shell">
+  <div class="confirm-icon" aria-hidden="true">
+    <mat-icon>{{ data.icon || 'person_remove' }}</mat-icon>
+  </div>
+
+  <h2 class="confirm-title">{{ data.title }}</h2>
+  <p class="confirm-message">{{ data.message }}</p>
+
+  <div class="confirm-actions">
+    <button class="btn-cancel" type="button" (click)="cancel()">
+      {{ data.cancelText || 'Cancel' }}
+    </button>
+    <button class="btn-confirm" type="button" (click)="confirm()">
+      <mat-icon>{{ data.icon || 'person_remove' }}</mat-icon>
+      <span>{{ data.confirmText || 'Confirm' }}</span>
+    </button>
+  </div>
+</div>

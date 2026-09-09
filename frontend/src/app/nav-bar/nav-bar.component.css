@@ -1,0 +1,109 @@
+.sidenav-container {
+  height: 100%;
+}
+
+.sidenav {
+  width: 200px;
+}
+
+.sidenav .mat-toolbar {
+  background: inherit;
+}
+
+.mat-toolbar.mat-primary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.nav-bar {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid #e8edf5;
+  backdrop-filter: blur(8px);
+  padding: 0.35rem 0.5rem;
+}
+
+.nav-inner {
+  gap: 0.75rem;
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1c2434;
+}
+
+.brand-logo {
+  height: 40px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0;
+}
+
+.btn-signin,
+.btn-signup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 0.55rem 1rem;
+  font-family: "Figtree", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.btn-signin {
+  color: #1c2434;
+  background: transparent;
+  border-color: #e8edf5;
+}
+
+.btn-signin:hover {
+  transform: translateY(-1px);
+  background: rgba(79, 124, 255, 0.06);
+  color: #4f7cff;
+  border-color: rgba(79, 124, 255, 0.25);
+}
+
+.btn-signup {
+  color: #fff;
+  background: linear-gradient(135deg, #4f7cff 0%, #7b5cff 100%);
+  box-shadow: 0 8px 18px rgba(79, 124, 255, 0.25);
+}
+
+.btn-signup:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #3f6df0 0%, #6a4ef0 100%);
+  color: #fff;
+}
+
+@media (max-width: 576px) {
+  .nav-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-signin,
+  .btn-signup {
+    width: 100%;
+  }
+}

@@ -1,0 +1,393 @@
+<div class="talkzen-shell">
+  <!-- Left dark rail -->
+  <aside class="rail">
+    <div class="rail-brand">
+      <img src="assets/logo/Talkzen%20Logo.png" alt="Talkzen" />
+      <span>Talkzen</span>
+    </div>
+
+    <nav class="rail-nav">
+      <button
+        class="rail-item"
+        type="button"
+        [class.active]="activeTab === 'chats'"
+        (click)="setTab('chats')"
+      >
+        <mat-icon>chat_bubble</mat-icon>
+        <span>Chats</span>
+        <span class="rail-badge" *ngIf="chatsBadgeCount > 0">
+          {{ badgeLabel(chatsBadgeCount) }}
+        </span>
+      </button>
+      <button
+        class="rail-item"
+        type="button"
+        [class.active]="activeTab === 'contacts'"
+        (click)="setTab('contacts')"
+      >
+        <mat-icon>contacts</mat-icon>
+        <span>Contacts</span>
+        <span class="rail-badge" *ngIf="contactsBadgeCount > 0">
+          {{ badgeLabel(contactsBadgeCount) }}
+        </span>
+      </button>
+    </nav>
+
+    <div class="rail-footer">
+      <div class="rail-user">
+        <img
+          *ngIf="chatAppService.hasAvatar(currentUser?.image)"
+          class="rail-avatar"
+          [src]="chatAppService.getImageUrl(currentUser?.image)"
+          [alt]="currentUser?.name"
+        />
+        <div
+          *ngIf="!chatAppService.hasAvatar(currentUser?.image)"
+          class="rail-avatar avatar-initials"
+          aria-hidden="true"
+        >
+          {{ chatAppService.getInitials(currentUser?.name) }}
+        </div>
+        <div>
+          <div class="rail-user-name">{{ currentUser?.name }}</div>
+          <div class="rail-user-status"><span class="dot"></span> Online</div>
+        </div>
+      </div>
+
+      <div class="settings-wrap" (click)="$event.stopPropagation()">
+        <div class="settings-menu" *ngIf="settingsOpen">
+          <button type="button" class="settings-item" (click)="openProfile()">
+            <mat-icon>person_outline</mat-icon>
+            <span>View Profile</span>
+            <mat-icon class="chevron">chevron_right</mat-icon>
+          </button>
+          <button type="button" class="settings-item" (click)="openChangePassword()">
+            <mat-icon>lock_outline</mat-icon>
+            <span>Change Password</span>
+            <mat-icon class="chevron">chevron_right</mat-icon>
+          </button>
+          <div class="settings-divider"></div>
+          <button type="button" class="settings-item danger" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Log Out</span>
+          </button>
+        </div>
+
+        <button
+          class="settings-btn"
+          type="button"
+          [class.open]="settingsOpen"
+          (click)="toggleSettings()"
+          aria-label="Settings"
+        >
+          <mat-icon>settings</mat-icon>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Middle list -->
+  <aside class="chat-list">
+    <div class="list-top">
+      <div class="search-wrap">
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          [placeholder]="activeTab === 'chats' ? 'Search chats...' : 'Search contacts...'"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applySearch()"
+        />
+      </div>
+    </div>
+
+    <div class="list-heading">
+      {{ activeTab === 'chats' ? 'Your chats' : 'All contacts' }}
+    </div>
+
+    <p class="list-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <div class="list-scroll">
+      <!-- Chats: accepted contacts only -->
+      <ng-container *ngIf="activeTab === 'chats'">
+        <button
+          type="button"
+          class="chat-row"
+          *ngFor="let user of filteredUsers"
+          [class.active]="userIdMatch(user)"
+          (click)="selectedUserHandler(user)"
+        >
+          <div class="avatar-wrap">
+            <img
+              *ngIf="chatAppService.hasAvatar(user.image)"
+              class="row-avatar"
+              [src]="chatAppService.getImageUrl(user.image)"
+              [alt]="user.name"
+            />
+            <div
+              *ngIf="!chatAppService.hasAvatar(user.image)"
+              class="row-avatar avatar-initials"
+              aria-hidden="true"
+            >
+              {{ chatAppService.getInitials(user.name) }}
+            </div>
+            <span class="online-dot" aria-hidden="true"></span>
+          </div>
+          <div class="row-meta">
+            <div class="row-top">
+              <span class="row-name">{{ user?.name }}</span>
+              <span class="row-time">{{ formatChatTime(user?.lastMessageTime) || 'Now' }}</span>
+            </div>
+            <div class="row-bottom">
+              <span class="row-preview">
+                {{ user?.lastMessage || 'Tap to start chatting' }}
+              </span>
+              <span
+                class="chat-badge"
+                *ngIf="(user?.unreadCount || 0) > 0"
+                [class.active-badge]="userIdMatch(user)"
+              >
+                {{ badgeLabel(user.unreadCount) }}
+              </span>
+            </div>
+          </div>
+        </button>
+
+        <div class="list-empty" *ngIf="!filteredUsers?.length">
+          No chats yet. Open Contacts, send a request, and chat after they accept.
+        </div>
+      </ng-container>
+
+      <!-- Contacts: all users + request actions -->
+      <ng-container *ngIf="activeTab === 'contacts'">
+        <div class="chat-row contact-row" *ngFor="let user of filteredUsers">
+          <img
+            *ngIf="chatAppService.hasAvatar(user.image)"
+            class="row-avatar"
+            [src]="chatAppService.getImageUrl(user.image)"
+            [alt]="user.name"
+          />
+          <div
+            *ngIf="!chatAppService.hasAvatar(user.image)"
+            class="row-avatar avatar-initials"
+            aria-hidden="true"
+          >
+            {{ chatAppService.getInitials(user.name) }}
+          </div>
+          <div class="row-meta">
+            <div class="row-top">
+              <span class="row-name">{{ user?.name }}</span>
+            </div>
+            <div class="row-bottom">
+              <span class="row-preview">{{ contactActionLabel(user) }}</span>
+            </div>
+            <div class="contact-actions">
+              <button
+                *ngIf="user.contactStatus === 'none' || user.contactStatus === 'unfollowed' || user.contactStatus === 'unfollowed_by_peer'"
+                type="button"
+                class="btn-mini primary"
+                (click)="sendRequest(user, $event)"
+              >
+                {{ user.contactStatus === 'none' ? 'Add' : 'Request again' }}
+              </button>
+
+              <span
+                *ngIf="user.contactStatus === 'pending' && user.contactDirection === 'outgoing'"
+                class="status-pill"
+              >
+                Pending
+              </span>
+              <button
+                *ngIf="user.contactStatus === 'pending' && user.contactDirection === 'outgoing'"
+                type="button"
+                class="btn-mini ghost"
+                (click)="rejectRequest(user, $event)"
+              >
+                Cancel
+              </button>
+
+              <button
+                *ngIf="user.contactStatus === 'pending' && user.contactDirection === 'incoming'"
+                type="button"
+                class="btn-mini primary"
+                (click)="acceptRequest(user, $event)"
+              >
+                Accept
+              </button>
+              <button
+                *ngIf="user.contactStatus === 'pending' && user.contactDirection === 'incoming'"
+                type="button"
+                class="btn-mini ghost"
+                (click)="rejectRequest(user, $event)"
+              >
+                Decline
+              </button>
+
+              <button
+                *ngIf="user.contactStatus === 'accepted'"
+                type="button"
+                class="btn-mini ghost"
+                (click)="unfollow(user, $event)"
+              >
+                Unfollow
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-empty" *ngIf="!filteredUsers?.length">
+          No contacts found
+        </div>
+      </ng-container>
+    </div>
+  </aside>
+
+  <!-- Right conversation -->
+  <main class="conversation">
+    <ng-container *ngIf="selectedUser && activeTab === 'chats'; else emptyState">
+      <header class="conv-header">
+        <div class="conv-user">
+          <img
+            *ngIf="chatAppService.hasAvatar(selectedUser.image)"
+            class="conv-avatar"
+            [src]="chatAppService.getImageUrl(selectedUser.image)"
+            [alt]="selectedUser.name"
+          />
+          <div
+            *ngIf="!chatAppService.hasAvatar(selectedUser.image)"
+            class="conv-avatar avatar-initials"
+            aria-hidden="true"
+          >
+            {{ chatAppService.getInitials(selectedUser.name) }}
+          </div>
+          <div>
+            <div class="conv-name">{{ selectedUser.name }}</div>
+            <div class="conv-status"><span class="dot"></span> Online</div>
+          </div>
+        </div>
+        <div class="conv-actions">
+          <button
+            *ngIf="selectedUser?.canMessage !== false"
+            class="icon-btn"
+            type="button"
+            title="Unfollow"
+            (click)="unfollow()"
+            aria-label="Unfollow"
+          >
+            <mat-icon>person_remove</mat-icon>
+          </button>
+          <button
+            *ngIf="selectedUser?.peerUnfollowed"
+            class="icon-btn"
+            type="button"
+            title="Remove from chats"
+            (click)="unfollow()"
+            aria-label="Remove from chats"
+          >
+            <mat-icon>person_remove</mat-icon>
+          </button>
+          <button class="icon-btn" type="button" (click)="leaveChat()" aria-label="Close chat">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </header>
+
+      <section class="conv-messages container">
+        <ng-container *ngFor="let msg of messageArray; let i = index">
+          <div
+            class="date-separator"
+            *ngIf="msg.name !== 'system' && showDateSeparator(i)"
+          >
+            <span>{{ dateLabel(msg.timestamp || msg.time) }}</span>
+          </div>
+
+          <div class="system-msg" *ngIf="msg.name === 'system'">
+            {{ msg.message }}
+          </div>
+
+          <div
+            class="msg-row"
+            *ngIf="msg.name !== 'system'"
+            [class.mine]="msg.name === currentUser?.name"
+            [class.theirs]="msg.name !== currentUser?.name"
+          >
+            <img
+              class="bubble-avatar"
+              *ngIf="msg.name !== currentUser?.name && chatAppService.hasAvatar(selectedUser.image)"
+              [src]="chatAppService.getImageUrl(selectedUser.image)"
+              [alt]="selectedUser.name"
+            />
+            <div
+              class="bubble-avatar avatar-initials"
+              *ngIf="msg.name !== currentUser?.name && !chatAppService.hasAvatar(selectedUser.image)"
+              aria-hidden="true"
+            >
+              {{ chatAppService.getInitials(selectedUser.name) }}
+            </div>
+
+            <div class="bubble">
+              <div class="bubble-text">{{ msg.message }}</div>
+              <div class="bubble-meta">
+                <span>{{ msg.time || '' }}</span>
+                <mat-icon *ngIf="msg.name === currentUser?.name">done_all</mat-icon>
+              </div>
+            </div>
+
+            <img
+              class="bubble-avatar"
+              *ngIf="msg.name === currentUser?.name && chatAppService.hasAvatar(currentUser?.image)"
+              [src]="chatAppService.getImageUrl(currentUser?.image)"
+              [alt]="currentUser?.name"
+            />
+            <div
+              class="bubble-avatar avatar-initials"
+              *ngIf="msg.name === currentUser?.name && !chatAppService.hasAvatar(currentUser?.image)"
+              aria-hidden="true"
+            >
+              {{ chatAppService.getInitials(currentUser?.name) }}
+            </div>
+          </div>
+        </ng-container>
+      </section>
+
+      <footer class="composer" *ngIf="selectedUser?.canMessage !== false; else blockedComposer">
+        <div class="composer-box">
+          <input
+            type="text"
+            [(ngModel)]="messageText"
+            (keyup.enter)="chatSend()"
+            placeholder="Type a message..."
+          />
+        </div>
+        <button class="send-btn" type="button" (click)="chatSend()" aria-label="Send">
+          <mat-icon>send</mat-icon>
+        </button>
+      </footer>
+
+      <ng-template #blockedComposer>
+        <div class="composer-blocked">
+          <mat-icon>block</mat-icon>
+          <p>
+            You can't message {{ selectedUser?.name }} because they unfollowed you.
+          </p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <img
+          class="empty-logo"
+          src="assets/logo/Talkzen%20Logo.png"
+          alt="Talkzen"
+        />
+        <h2>Welcome to Talkzen</h2>
+        <p *ngIf="activeTab === 'chats'">
+          Select a chat on the left, or add people from Contacts.
+        </p>
+        <p *ngIf="activeTab === 'contacts'">
+          Send a request to connect. After they accept, they appear in Chats.
+        </p>
+      </div>
+    </ng-template>
+  </main>
+</div>

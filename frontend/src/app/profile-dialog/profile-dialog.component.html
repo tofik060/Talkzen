@@ -1,0 +1,80 @@
+<div class="profile-shell">
+  <button class="close-btn" type="button" (click)="close()" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="profile-hero">
+      <img
+        *ngIf="chatAppService.hasAvatar(selectedAvatar)"
+        class="profile-avatar"
+        [src]="chatAppService.getImageUrl(selectedAvatar)"
+        [alt]="form.get('name')?.value"
+      />
+      <div
+        *ngIf="!chatAppService.hasAvatar(selectedAvatar)"
+        class="profile-avatar avatar-initials"
+        aria-hidden="true"
+      >
+        {{ chatAppService.getInitials(form.get('name')?.value) }}
+      </div>
+      <h2>{{ form.get('name')?.value || user?.name }}</h2>
+      <p>Update your Talkzen profile</p>
+    </div>
+
+    <div class="avatar-picker">
+      <div class="section-label">Choose avatar</div>
+      <div class="avatar-grid">
+        <button
+          type="button"
+          class="avatar-option avatar-initials-option"
+          [class.selected]="!selectedAvatar"
+          (click)="clearAvatar()"
+          aria-label="Use name initials"
+        >
+          <span class="avatar-initials-preview">
+            {{ chatAppService.getInitials(form.get('name')?.value) }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="avatar-option"
+          *ngFor="let avatar of avatars"
+          [class.selected]="selectedAvatar === avatar.path"
+          (click)="selectAvatar(avatar.path)"
+          [attr.aria-label]="avatar.label"
+        >
+          <img [src]="avatar.path" [alt]="avatar.label" />
+        </button>
+      </div>
+    </div>
+
+    <div class="profile-rows">
+      <label class="profile-row editable">
+        <span>Name</span>
+        <input type="text" formControlName="name" placeholder="Your name" />
+      </label>
+      <label class="profile-row editable">
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="you@example.com" />
+      </label>
+      <label class="profile-row editable">
+        <span>Phone</span>
+        <input type="tel" formControlName="phone" maxlength="10" placeholder="10-digit number" />
+      </label>
+      <label class="profile-row editable">
+        <span>Location</span>
+        <input type="text" formControlName="location" placeholder="City or region" />
+      </label>
+    </div>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <div class="actions">
+      <button class="btn-cancel" type="button" (click)="close()">Cancel</button>
+      <button class="btn-save" type="submit" [disabled]="saving || form.invalid">
+        {{ saving ? 'Saving...' : 'Save changes' }}
+      </button>
+    </div>
+  </form>
+</div>
