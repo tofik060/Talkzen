@@ -61,7 +61,6 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use("/uploads", express.static(uploadsDir));
-//console.log(path.join(__dirname,'uploads'))
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -108,14 +107,12 @@ app.post("/api/user-register", upload, async (req, res) => {
         image: image,
         location: req.body.location,
       });
-      const chatUser = await userRegister.save();
-      console.log("Successfully register :", chatUser);
+      await userRegister.save();
       return res.json({
         message: "Successfully register",
         status: 200,
       });
     } else {
-      console.log("password are not match");
       return res.status(400).json({
         message: "password are not match",
         status: 400,
@@ -158,7 +155,6 @@ app.post("/api/login", async (req, res) => {
       delete safeUser.password;
       delete safeUser.confirmPassword;
 
-      console.log("Login Successfull", safeUser.name);
       res.json({
         message: "Login Successfull",
         status: 200,
@@ -241,7 +237,6 @@ app.post("/api/message", authMiddleware, async (req, res) => {
       read: false,
     });
     const chatmessage = await chatmsg.save();
-    console.log("successfully insert Chat message : ", chatmessage);
     res.json({
       message: "successfully insert Chat message",
       data: chatmessage,
@@ -662,7 +657,6 @@ app.get("/api/user-register/:id", authMiddleware, (req, res) => {
     .select("-password -confirmPassword")
     .then((data) => {
       res.json(data);
-      console.log("Message get:", data);
     })
     .catch((error) => {
       res.send({
@@ -855,10 +849,6 @@ app.post("/api/change-password", authMiddleware, async (req, res) => {
   }
 });
 
-//const router = require('./routes/routers');
-const exp = require("constants");
-const { Console } = require("console");
-//app.use('/api', router)
 const users = {};
 
 io.use(async (socket, next) => {
@@ -896,13 +886,9 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("A User Connected:", socket.user?.name || socket.id);
-
   socket.on("new-user-joined", ({ name }) => {
     const userName = name || socket.user?.name;
-    console.log(`New User : ${userName}`);
     users[socket.id] = userName;
-    console.log("users : ", users);
 
     socket.broadcast.emit("user-joined", userName);
     io.emit("users-list", users);
@@ -914,20 +900,16 @@ io.on("connection", (socket) => {
       return;
     }
     socket.broadcast.emit("receive", msg);
-    console.log(`message : ${msg}`);
   });
 
   socket.on("disconnect", () => {
-    console.log("user disconnect : ", users[socket.id]);
     socket.broadcast.emit("leave", users[socket.id]);
     delete users[socket.id];
     io.emit("users-list", users);
   });
 });
 
-server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+server.listen(port);
 
 app.get("/", (req, res) => {
   res.send("Invalid Endpoint");

@@ -92,7 +92,6 @@ export class RegistrationComponent implements OnInit {
       formData.append('image', this.selectedAvatar || '');
       this.chatAppService.registration(formData).subscribe({
         next: (res: any) => {
-          console.log('User register', res);
           if (res?.status === 200) {
             this.router.navigate(['/']);
           } else {

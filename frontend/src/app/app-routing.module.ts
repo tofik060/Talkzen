@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './login/login.component';
 import { NavBarComponent } from './nav-bar/nav-bar.component';
 import { ChatBodyComponent } from './chat-body/chat-body.component';
-import { TestComponent } from './test/test.component';
 import { RegistrationComponent } from './registration/registration.component';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -17,7 +16,6 @@ const routes: Routes = [
     canActivate: [AuthGuard],
   },
   { path: 'registration', component: RegistrationComponent },
-  { path: 'test', component: TestComponent },
 ];
 
 @NgModule({

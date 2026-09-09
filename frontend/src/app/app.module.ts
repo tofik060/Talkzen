@@ -16,7 +16,6 @@ import { MatInputModule } from '@angular/material/input';
 import { LoginComponent } from './login/login.component';
 import { ChatBodyComponent } from './chat-body/chat-body.component';
 import { SocketIoConfig, SocketIoModule } from 'ngx-socket-io';
-import { TestComponent } from './test/test.component';
 import { RegistrationComponent } from './registration/registration.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -44,7 +43,6 @@ const config: SocketIoConfig = {
     NavBarComponent,
     LoginComponent,
     ChatBodyComponent,
-    TestComponent,
     RegistrationComponent,
     ConfirmDialogComponent,
     ProfileDialogComponent,
