@@ -879,6 +879,11 @@
   margin: 0;
 }
 
+.mobile-nav,
+.mobile-back {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .talkzen-shell {
     grid-template-columns: 76px 280px 1fr;
@@ -908,15 +913,16 @@
 
 @media (max-width: 820px) {
   :host {
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   .talkzen-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: 42% 58%;
-    min-height: 100vh;
+    grid-template-rows: 1fr auto;
+    height: 100dvh;
+    min-height: 0;
   }
 
   .rail {
@@ -924,7 +930,149 @@
   }
 
   .chat-list {
+    grid-row: 1;
+    grid-column: 1;
     border-right: none;
-    border-bottom: 1px solid var(--line);
+    border-bottom: none;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .conversation {
+    display: none;
+    grid-row: 1;
+    grid-column: 1;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .talkzen-shell.mobile-chat-open .chat-list {
+    display: none;
+  }
+
+  .talkzen-shell.mobile-chat-open .conversation {
+    display: flex;
+  }
+
+  .talkzen-shell.mobile-chat-open .mobile-nav {
+    display: none;
+  }
+
+  .mobile-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-right: 0.15rem;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .mobile-back mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-row: 2;
+    grid-column: 1;
+    gap: 0.15rem;
+    padding: 0.35rem 0.4rem calc(0.35rem + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    z-index: 20;
+  }
+
+  .mobile-nav-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 52px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.35rem 0.2rem;
+  }
+
+  .mobile-nav-item mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.1);
+  }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 22px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #e04545;
+    color: #fff;
+    font-size: 0.62rem;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  .mobile-nav-profile .mobile-nav-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .mobile-nav-avatar.avatar-initials {
+    font-size: 0.62rem;
+    border: none;
+  }
+
+  .mobile-nav-name {
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-settings-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .mobile-settings-menu {
+    left: auto;
+    right: 0;
+    bottom: calc(100% + 10px);
+    width: min(240px, calc(100vw - 1.25rem));
+    max-width: calc(100vw - 1.25rem);
+    transform: translateX(0);
+  }
+
+  .mobile-settings-menu::after {
+    left: auto;
+    right: 22px;
   }
 }

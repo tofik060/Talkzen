@@ -1,4 +1,7 @@
-<div class="talkzen-shell">
+<div
+  class="talkzen-shell"
+  [class.mobile-chat-open]="!!selectedUser && activeTab === 'chats'"
+>
   <!-- Left dark rail -->
   <aside class="rail">
     <div class="rail-brand">
@@ -252,6 +255,14 @@
     <ng-container *ngIf="selectedUser && activeTab === 'chats'; else emptyState">
       <header class="conv-header">
         <div class="conv-user">
+          <button
+            class="mobile-back"
+            type="button"
+            (click)="leaveChat()"
+            aria-label="Back to chats"
+          >
+            <mat-icon>arrow_back</mat-icon>
+          </button>
           <img
             *ngIf="chatAppService.hasAvatar(selectedUser.image)"
             class="conv-avatar"
@@ -406,4 +417,86 @@
       </div>
     </ng-template>
   </main>
+
+  <!-- Mobile bottom bar: Chats, Contacts, profile, Settings -->
+  <nav class="mobile-nav" aria-label="Primary">
+    <button
+      class="mobile-nav-item"
+      type="button"
+      [class.active]="activeTab === 'chats'"
+      (click)="setTab('chats')"
+    >
+      <mat-icon>chat_bubble</mat-icon>
+      <span>Chats</span>
+      <span class="mobile-nav-badge" *ngIf="chatsBadgeCount > 0">
+        {{ badgeLabel(chatsBadgeCount) }}
+      </span>
+    </button>
+
+    <button
+      class="mobile-nav-item"
+      type="button"
+      [class.active]="activeTab === 'contacts'"
+      (click)="setTab('contacts')"
+    >
+      <mat-icon>contacts</mat-icon>
+      <span>Contacts</span>
+      <span class="mobile-nav-badge" *ngIf="contactsBadgeCount > 0">
+        {{ badgeLabel(contactsBadgeCount) }}
+      </span>
+    </button>
+
+    <button
+      class="mobile-nav-item mobile-nav-profile"
+      type="button"
+      (click)="openProfile()"
+      [attr.aria-label]="'Profile ' + (currentUser?.name || '')"
+    >
+      <img
+        *ngIf="chatAppService.hasAvatar(currentUser?.image)"
+        class="mobile-nav-avatar"
+        [src]="chatAppService.getImageUrl(currentUser?.image)"
+        [alt]="currentUser?.name"
+      />
+      <div
+        *ngIf="!chatAppService.hasAvatar(currentUser?.image)"
+        class="mobile-nav-avatar avatar-initials"
+        aria-hidden="true"
+      >
+        {{ chatAppService.getInitials(currentUser?.name) }}
+      </div>
+      <span class="mobile-nav-name">{{ currentUser?.name || 'You' }}</span>
+    </button>
+
+    <div class="mobile-settings-wrap" (click)="$event.stopPropagation()">
+      <div class="settings-menu mobile-settings-menu" *ngIf="settingsOpen">
+        <button type="button" class="settings-item" (click)="openProfile()">
+          <mat-icon>person_outline</mat-icon>
+          <span>View Profile</span>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </button>
+        <button type="button" class="settings-item" (click)="openChangePassword()">
+          <mat-icon>lock_outline</mat-icon>
+          <span>Change Password</span>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </button>
+        <div class="settings-divider"></div>
+        <button type="button" class="settings-item danger" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Log Out</span>
+        </button>
+      </div>
+
+      <button
+        class="mobile-nav-item"
+        type="button"
+        [class.active]="settingsOpen"
+        (click)="toggleSettings()"
+        aria-label="Settings"
+      >
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+    </div>
+  </nav>
 </div>
