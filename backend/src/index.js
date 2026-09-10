@@ -2,12 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const crypto = require("crypto");
 const port = process.env.PORT || 3000;
-const allowedOrigins = (
-  process.env.frontEnd_URL || "http://localhost:4200"
-)
+const defaultOrigins = [
+  "http://localhost:4200",
+  "https://talkzen-web.onrender.com",
+];
+const envOrigins = (process.env.frontEnd_URL || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+
 require("./db/conn");
 const bodyParser = require("body-parser");
 const cors = require("cors");
