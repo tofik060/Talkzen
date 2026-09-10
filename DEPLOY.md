@@ -105,9 +105,11 @@ Commit and push this change.
 3. Create the static site and wait for the build.
 4. Copy the frontend URL, e.g. `https://talkzen-web.onrender.com`.
 
-### Fix Angular routes
+### Fix Angular routes (refresh / deep links)
 
-This repo already includes `src/_redirects` (`/* /index.html 200`) so refresh on `/chat-application` etc. works.
+The app uses **hash routing** (`/#/chat-application`), so refresh works on Render without extra rewrite rules.
+
+Optional (path URLs without `#`): Render → **talkzen-web** → **Redirects/Rewrites** → Source `/*` → Destination `/index.html` → Action **Rewrite**.
 
 ---
 
@@ -149,7 +151,7 @@ You can also use Render Blueprints later; manual setup above is enough for the f
 | DB connection failed | Check Atlas user/password, Network Access `0.0.0.0/0`, and `DB_URI` |
 | Socket not connecting | Confirm `socket_URI` is the backend URL (no `/api`) |
 | Uploaded images disappear | Render disk is ephemeral; prefer avatar assets paths |
-| App slow first time | Free Web Service cold start — upgrade instance or hit the API to wake it |
+| Refresh on `/chat-application` shows Not Found | App uses hash routes (`/#/chat-application`). Redeploy frontend after that change, or add Rewrite `/*` → `/index.html` |
 
 ---
 
