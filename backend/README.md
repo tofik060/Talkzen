@@ -15,6 +15,8 @@ Built with **Express**, **MongoDB (Mongoose)**, **JWT**, **bcrypt**, and **Socke
 - `GET /api/me` for the current user
 - `PUT /api/me` to update profile
 - `POST /api/change-password` (validates current password; rejects same new password)
+- `POST /api/forgot-password` — creates a hashed reset token (expires in 15 minutes)
+- `POST /api/reset-password` — sets a new password with a valid reset token
 - Auth middleware protects private routes
 - Socket.IO handshake requires a valid JWT
 
@@ -51,7 +53,7 @@ backend/
     db/conn.js            MongoDB connection
     middleware/auth.js    JWT verification
     models/
-      users.js
+      users.js            Includes resetToken / resetTokenExpiry
       message.js
       contact.js
     uploads/              Ignored by git (user media)
@@ -105,9 +107,11 @@ socket_URI=http://localhost:3000
 | GET | `/api/user-register` | Yes | List users |
 | GET | `/api/user-register/:id` | Yes | Get user by id |
 | POST | `/api/login` | No | Login → JWT |
+| POST | `/api/forgot-password` | No | Start password reset (returns reset token) |
+| POST | `/api/reset-password` | No | Set new password with reset token |
 | GET | `/api/me` | Yes | Current user |
 | PUT | `/api/me` | Yes | Update profile |
-| POST | `/api/change-password` | Yes | Change password |
+| POST | `/api/change-password` | Yes | Change password (logged in) |
 | GET | `/api/contacts` | Yes | Users + contact status |
 | GET | `/api/chats` | Yes | Chat peers + unread/last message |
 | POST | `/api/contacts/request` | Yes | Send request |
@@ -117,6 +121,16 @@ socket_URI=http://localhost:3000
 | GET | `/api/message` | Yes | Conversation (`userId`, `peerId`) |
 | POST | `/api/message` | Yes | Save message |
 | POST | `/api/message/read` | Yes | Mark peer messages read |
+
+---
+
+## Password reset flow
+
+1. Client calls `POST /api/forgot-password` with `{ email }`
+2. Server stores a SHA-256 hashed token + 15-minute expiry on the user
+3. Client receives `resetToken` and opens the reset-password screen
+4. Client calls `POST /api/reset-password` with `{ token, newPassword, confirmPassword }`
+5. Server validates token/expiry/password rules, updates password, clears the token
 
 ---
 

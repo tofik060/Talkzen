@@ -14,6 +14,8 @@ Built with **Angular 16**, **Angular Material**, **RxJS**, and **Socket.IO clien
 - Password rules: 8+ characters, letter, number, and symbol; confirm password must match
 - JWT stored in `localStorage`; attached to HTTP requests via interceptor
 - Auth guard on the chat route
+- **Forgot password** (`/forgot-password`): enter account email
+- **Reset password** (`/reset-password`): set a new password with the reset token (15-minute expiry)
 
 ### Contacts
 - Contacts tab lists all other users
@@ -44,6 +46,8 @@ Built with **Angular 16**, **Angular Material**, **RxJS**, and **Socket.IO clien
 src/app/
   login/
   registration/
+  forgot-password/
+  reset-password/
   chat-body/                 Main chat UI
   confirm-dialog/
   profile-dialog/
@@ -99,6 +103,8 @@ Production builds use `environment.prod.ts` (via `angular.json` file replacement
 |------|--------|--------|
 | `/` | Sign in | Public |
 | `/registration` | Sign up | Public |
+| `/forgot-password` | Request password reset | Public |
+| `/reset-password` | Set new password | Public (needs token) |
 | `/chat-application` | Chat app | JWT required |
 
 ---

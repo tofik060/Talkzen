@@ -43,6 +43,7 @@ User → Frontend (Angular)
 - New users register (profile + optional avatar, or initials if none)
 - Login returns a **JWT**; the frontend stores it and sends it on API and socket requests
 - Protected screens (chat) require a valid token
+- **Forgot password:** enter email → set a new password with a short-lived reset token → sign in again
 
 ### 2. Contacts
 - Contacts shows every other registered user
@@ -68,6 +69,7 @@ User → Frontend (Angular)
 ### 5. Profile
 - From settings: view/edit profile, change password, log out
 - Password change requires the current password and a different new one
+- Logged-out users can also reset via **Forgot password?** on the sign-in screen
 
 ---
 
