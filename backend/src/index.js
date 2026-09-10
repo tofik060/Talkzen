@@ -54,6 +54,26 @@ function hasUnfollowed(link, userId) {
   return unfollowedByIds(link).includes(String(userId));
 }
 
+function getClearedAt(link, userId) {
+  const rows = link?.clearedAtBy || [];
+  const row = rows.find((r) => String(r.user) === String(userId));
+  return row?.at ? new Date(row.at) : null;
+}
+
+async function setClearedAt(link, userId, at = new Date()) {
+  const uid = String(userId);
+  const list = Array.isArray(link.clearedAtBy) ? [...link.clearedAtBy] : [];
+  const idx = list.findIndex((r) => String(r.user) === uid);
+  if (idx >= 0) {
+    list[idx] = { user: list[idx].user, at };
+  } else {
+    list.push({ user: userId, at });
+  }
+  link.clearedAtBy = list;
+  await link.save();
+  return at;
+}
+
 function isAllowedOrigin(origin) {
   return !origin || allowedOrigins.includes(origin);
 }
@@ -332,15 +352,30 @@ app.post("/api/reset-password", async (req, res) => {
 
 app.get("/api/message", authMiddleware, async (req, res) => {
   try {
+    const me = String(req.user.id);
     const { userId, peerId } = req.query;
 
     if (userId && peerId) {
-      const Data = await Message.find({
+      if (String(userId) !== me) {
+        return res.status(403).json({
+          message: "Not allowed",
+          status: 403,
+        });
+      }
+
+      const link = await findContactBetween(me, peerId);
+      const clearedAt = getClearedAt(link, me);
+      const filter = {
         $or: [
           { senderId: userId, receiverId: peerId },
           { senderId: peerId, receiverId: userId },
         ],
-      }).sort({ timestamp: 1 });
+      };
+      if (clearedAt) {
+        filter.timestamp = { $gt: clearedAt };
+      }
+
+      const Data = await Message.find(filter).sort({ timestamp: 1 });
 
       return res.json({
         Data,
@@ -352,6 +387,42 @@ app.get("/api/message", authMiddleware, async (req, res) => {
     return res.json({
       Data,
       status: 200,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      status: 500,
+    });
+  }
+});
+
+app.delete("/api/message", authMiddleware, async (req, res) => {
+  try {
+    const me = String(req.user.id);
+    const peerId = String(req.query.peerId || req.body?.peerId || "");
+
+    if (!peerId || !mongoose.Types.ObjectId.isValid(peerId)) {
+      return res.status(400).json({
+        message: "Valid peerId is required",
+        status: 400,
+      });
+    }
+
+    const link = await findContactBetween(me, peerId);
+    if (!link) {
+      return res.status(404).json({
+        message: "Chat not found",
+        status: 404,
+      });
+    }
+
+    // Clear for me only — messages stay for the other person
+    const clearedAt = await setClearedAt(link, me, new Date());
+
+    return res.json({
+      status: 200,
+      message: "Chat cleared for you only",
+      clearedAt,
     });
   } catch (error) {
     return res.status(500).json({
@@ -430,6 +501,113 @@ app.post("/api/message/read", authMiddleware, async (req, res) => {
       status: 200,
       message: "Messages marked as read",
       updated: result.modifiedCount || 0,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      status: 500,
+    });
+  }
+});
+
+app.put("/api/message/:id", authMiddleware, async (req, res) => {
+  try {
+    const me = String(req.user.id);
+    const messageId = String(req.params.id || "");
+    const text = String(req.body.message || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({
+        message: "Valid message id is required",
+        status: 400,
+      });
+    }
+    if (!text) {
+      return res.status(400).json({
+        message: "Message text is required",
+        status: 400,
+      });
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({
+        message: "Message not found",
+        status: 404,
+      });
+    }
+    if (String(msg.senderId) !== me) {
+      return res.status(403).json({
+        message: "You can only edit your own messages",
+        status: 403,
+      });
+    }
+
+    msg.message = text;
+    msg.edited = true;
+    await msg.save();
+
+    io.emit("message-updated", {
+      _id: String(msg._id),
+      senderId: String(msg.senderId),
+      receiverId: String(msg.receiverId),
+      message: msg.message,
+      edited: true,
+      timestamp: msg.timestamp,
+      name: msg.name,
+    });
+
+    res.json({
+      status: 200,
+      message: "Message updated",
+      data: msg,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      status: 500,
+    });
+  }
+});
+
+app.delete("/api/message/:id", authMiddleware, async (req, res) => {
+  try {
+    const me = String(req.user.id);
+    const messageId = String(req.params.id || "");
+
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({
+        message: "Valid message id is required",
+        status: 400,
+      });
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({
+        message: "Message not found",
+        status: 404,
+      });
+    }
+    if (String(msg.senderId) !== me) {
+      return res.status(403).json({
+        message: "You can only delete your own messages",
+        status: 403,
+      });
+    }
+
+    const payload = {
+      _id: String(msg._id),
+      senderId: String(msg.senderId),
+      receiverId: String(msg.receiverId),
+    };
+
+    await msg.deleteOne();
+    io.emit("message-deleted", payload);
+
+    res.json({
+      status: 200,
+      message: "Message permanently deleted",
     });
   } catch (error) {
     res.status(500).json({
@@ -543,7 +721,7 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
       .map((id) => new mongoose.Types.ObjectId(id));
     const meObjectId = new mongoose.Types.ObjectId(me);
 
-    const [chats, lastMessages, unreadCounts] = await Promise.all([
+    const [chats, lastMessages] = await Promise.all([
       user.find({ _id: { $in: peerObjectIds } }).select("-password -confirmPassword").lean(),
       Message.aggregate([
         {
@@ -570,23 +748,10 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
           },
         },
       ]),
-      Message.aggregate([
-        {
-          $match: {
-            senderId: { $in: peerObjectIds },
-            receiverId: meObjectId,
-            $or: [{ read: false }, { read: { $exists: false } }],
-          },
-        },
-        { $group: { _id: "$senderId", count: { $sum: 1 } } },
-      ]),
     ]);
 
     const lastByPeer = new Map(
       lastMessages.map((row) => [String(row._id), row])
-    );
-    const unreadByPeer = new Map(
-      unreadCounts.map((row) => [String(row._id), row.count])
     );
     const linkByPeer = new Map();
     visibleLinks.forEach((link) => {
@@ -595,6 +760,31 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
           ? String(link.recipient)
           : String(link.requester);
       linkByPeer.set(peer, link);
+    });
+
+    for (const [peerId, last] of [...lastByPeer.entries()]) {
+      const clearedAt = getClearedAt(linkByPeer.get(peerId), me);
+      if (clearedAt && last?.timestamp && new Date(last.timestamp) <= clearedAt) {
+        lastByPeer.delete(peerId);
+      }
+    }
+
+    const unreadMsgs = await Message.find({
+      senderId: { $in: peerObjectIds },
+      receiverId: meObjectId,
+      $or: [{ read: false }, { read: { $exists: false } }],
+    })
+      .select("senderId timestamp")
+      .lean();
+
+    const unreadByPeer = new Map();
+    unreadMsgs.forEach((m) => {
+      const peerId = String(m.senderId);
+      const clearedAt = getClearedAt(linkByPeer.get(peerId), me);
+      if (clearedAt && m.timestamp && new Date(m.timestamp) <= clearedAt) {
+        return;
+      }
+      unreadByPeer.set(peerId, (unreadByPeer.get(peerId) || 0) + 1);
     });
 
     const enriched = chats.map((u) => {

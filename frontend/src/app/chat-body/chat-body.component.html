@@ -299,7 +299,7 @@
             <div class="conv-status"><span class="dot"></span> Online</div>
           </div>
         </div>
-        <div class="conv-actions">
+        <div class="conv-actions" (click)="$event.stopPropagation()">
           <button
             *ngIf="selectedUser?.canMessage !== false"
             class="icon-btn"
@@ -320,11 +320,61 @@
           >
             <mat-icon>person_remove</mat-icon>
           </button>
-          <button class="icon-btn" type="button" (click)="leaveChat()" aria-label="Close chat">
-            <mat-icon>close</mat-icon>
-          </button>
+
+          <div class="chat-menu-wrap">
+            <div class="settings-menu chat-menu" *ngIf="chatMenuOpen">
+              <button type="button" class="settings-item" (click)="openChatSearch()">
+                <mat-icon>search</mat-icon>
+                <span>Search</span>
+                <mat-icon class="chevron">chevron_right</mat-icon>
+              </button>
+              <button type="button" class="settings-item" (click)="closeChatFromMenu()">
+                <mat-icon>chat_bubble_outline</mat-icon>
+                <span>Close chat</span>
+                <mat-icon class="chevron">chevron_right</mat-icon>
+              </button>
+              <div class="settings-divider"></div>
+              <button type="button" class="settings-item" (click)="clearChat()">
+                <mat-icon>delete_sweep</mat-icon>
+                <span>Clear chat</span>
+                <mat-icon class="chevron">chevron_right</mat-icon>
+              </button>
+              <button type="button" class="settings-item danger" (click)="deleteChat()">
+                <mat-icon>delete_forever</mat-icon>
+                <span>Delete chat</span>
+              </button>
+            </div>
+
+            <button
+              class="icon-btn"
+              type="button"
+              [class.open]="chatMenuOpen"
+              (click)="toggleChatMenu($event)"
+              aria-label="Chat options"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </div>
         </div>
       </header>
+
+      <div class="chat-search-bar" *ngIf="chatSearchOpen">
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          [(ngModel)]="chatSearchTerm"
+          placeholder="Search in conversation..."
+          autofocus
+        />
+        <button
+          class="icon-btn"
+          type="button"
+          (click)="closeChatSearch()"
+          aria-label="Close search"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
       <section #messagesContainer class="conv-messages container">
         <div class="messages-loading" *ngIf="messagesLoading">
@@ -332,7 +382,14 @@
         </div>
 
         <ng-container *ngIf="!messagesLoading">
-          <ng-container *ngFor="let msg of messageArray; let i = index">
+          <div
+            class="messages-empty"
+            *ngIf="chatSearchTerm.trim() && !displayedMessages.length"
+          >
+            No messages match “{{ chatSearchTerm.trim() }}”
+          </div>
+
+          <ng-container *ngFor="let msg of displayedMessages; let i = index">
             <div
               class="date-separator"
               *ngIf="msg.name !== 'system' && showDateSeparator(i)"
@@ -349,6 +406,7 @@
               *ngIf="msg.name !== 'system'"
               [class.mine]="msg.name === currentUser?.name"
               [class.theirs]="msg.name !== currentUser?.name"
+              [class.menu-active]="messageMenuId === msg._id"
             >
               <img
                 class="bubble-avatar"
@@ -364,12 +422,50 @@
                 {{ chatAppService.getInitials(selectedUser.name) }}
               </div>
 
-              <div class="bubble">
-                <div class="bubble-text">{{ msg.message }}</div>
-                <div class="bubble-meta">
-                  <span>{{ msg.time || '' }}</span>
-                  <mat-icon *ngIf="msg.name === currentUser?.name">done_all</mat-icon>
+              <div
+                class="bubble-wrap"
+                [class.mine-wrap]="msg.name === currentUser?.name"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  class="settings-menu msg-menu"
+                  [class.msg-menu-above]="messageMenuAbove"
+                  *ngIf="messageMenuId === msg._id"
+                >
+                  <button
+                    type="button"
+                    class="settings-item"
+                    (click)="editMessage(msg)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit</span>
+                    <mat-icon class="chevron">chevron_right</mat-icon>
+                  </button>
+                  <div class="settings-divider"></div>
+                  <button
+                    type="button"
+                    class="settings-item danger"
+                    (click)="deleteMessagePermanently(msg)"
+                  >
+                    <mat-icon>delete_forever</mat-icon>
+                    <span>Delete permanently</span>
+                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  class="bubble"
+                  [class.has-menu]="msg.name === currentUser?.name"
+                  [class.menu-open]="messageMenuId === msg._id"
+                  (click)="onMessageBubbleClick($event, msg)"
+                >
+                  <div class="bubble-text">{{ msg.message }}</div>
+                  <div class="bubble-meta">
+                    <span class="edited-tag" *ngIf="msg.edited">Edited</span>
+                    <span>{{ msg.time || '' }}</span>
+                    <mat-icon *ngIf="msg.name === currentUser?.name">done_all</mat-icon>
+                  </div>
+                </button>
               </div>
 
               <img
@@ -388,7 +484,7 @@
             </div>
           </ng-container>
 
-          <div class="messages-empty" *ngIf="!messageArray?.length">
+          <div class="messages-empty" *ngIf="!chatSearchTerm.trim() && !messageArray?.length">
             No messages yet. Say hello!
           </div>
         </ng-container>

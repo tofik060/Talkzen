@@ -14,6 +14,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { ProfileDialogComponent } from '../profile-dialog/profile-dialog.component';
 import { ChangePasswordDialogComponent } from '../change-password-dialog/change-password-dialog.component';
+import { EditMessageDialogComponent } from '../edit-message-dialog/edit-message-dialog.component';
 
 @Component({
   selector: 'app-chat-body',
@@ -39,19 +40,28 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
   public messageText = '';
   public settingsOpen = false;
   public accountMenuOpen = false;
+  public chatMenuOpen = false;
+  public chatSearchOpen = false;
+  public chatSearchTerm = '';
+  public messageMenuId: string | null = null;
+  public messageMenuAbove = false;
   public messageArray: {
+    _id?: string;
     name: string;
     message: string;
     time?: string;
     timestamp?: string | Date;
     senderId?: string;
     receiverId?: string;
+    edited?: boolean;
   }[] = [];
 
   listsLoading = false;
   messagesLoading = false;
 
   private messageSub?: Subscription;
+  private messageUpdatedSub?: Subscription;
+  private messageDeletedSub?: Subscription;
 
   constructor(
     public chatAppService: ChatAppService,
@@ -87,13 +97,23 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
         return;
       }
 
+      const incomingId = data?._id ? String(data._id) : '';
+      if (
+        incomingId &&
+        this.messageArray.some((m) => String(m._id || '') === incomingId)
+      ) {
+        return;
+      }
+
       this.messageArray.push({
+        _id: incomingId || undefined,
         name: data.name,
         message: data.message,
         senderId: data.senderId,
         receiverId: data.receiverId,
         time: data.time || this.nowTime(),
         timestamp: data.timestamp || new Date().toISOString(),
+        edited: !!data.edited,
       });
       this.scrollToLatestMessage();
 
@@ -101,6 +121,35 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
         this.markSelectedRead();
       }
     });
+
+    this.messageUpdatedSub = this.chatAppService
+      .onMessageUpdated()
+      .subscribe((data: any) => {
+        const id = String(data?._id || '');
+        if (!id || !this.isForActiveChat(data)) return;
+        const idx = this.messageArray.findIndex((m) => String(m._id) === id);
+        if (idx < 0) return;
+        this.messageArray[idx] = {
+          ...this.messageArray[idx],
+          message: data.message,
+          edited: true,
+        };
+        this.messageArray = [...this.messageArray];
+      });
+
+    this.messageDeletedSub = this.chatAppService
+      .onMessageDeleted()
+      .subscribe((data: any) => {
+        const id = String(data?._id || '');
+        if (!id) return;
+        if (this.messageMenuId === id) {
+          this.messageMenuId = null;
+        }
+        if (!this.isForActiveChat(data)) return;
+        this.messageArray = this.messageArray.filter(
+          (m) => String(m._id || '') !== id
+        );
+      });
   }
 
   private scrollToLatestMessage() {
@@ -168,7 +217,8 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
   }
 
   showDateSeparator(index: number): boolean {
-    const current = this.messageArray[index];
+    const list = this.displayedMessages;
+    const current = list[index];
     if (!current || current.name === 'system') return false;
 
     const currentKey = this.dayKey(current.timestamp || current.time);
@@ -177,12 +227,26 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     if (index === 0) return true;
 
     for (let i = index - 1; i >= 0; i--) {
-      const prev = this.messageArray[i];
+      const prev = list[i];
       if (prev?.name === 'system') continue;
       const prevKey = this.dayKey(prev?.timestamp || prev?.time);
       return prevKey !== currentKey;
     }
     return true;
+  }
+
+  get displayedMessages() {
+    const q = this.chatSearchTerm.trim().toLowerCase();
+    if (!q) {
+      return this.messageArray;
+    }
+    return this.messageArray.filter(
+      (msg) =>
+        msg.name !== 'system' &&
+        String(msg.message || '')
+          .toLowerCase()
+          .includes(q)
+    );
   }
 
   refreshLists(keepSelection = true) {
@@ -220,7 +284,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
             ? 'Connecting to server… try again in a moment.'
             : err?.error?.message || 'Failed to load chats';
         if (err?.status === 401) {
-          this.logout();
+          this.logout(true);
         }
       },
     });
@@ -316,6 +380,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     }
     this.selectedUser = user;
     this.messageArray = [];
+    this.messageMenuId = null;
     this.messagesLoading = true;
     this.join(this.currentUser.name, this.selectedUser.name);
     this.loadConversation();
@@ -335,12 +400,14 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
       next: (res: any) => {
         const rows = res?.Data || [];
         this.messageArray = rows.map((row: any) => ({
+          _id: String(row._id),
           name: row.name,
           message: row.message,
           senderId: String(row.senderId),
           receiverId: String(row.receiverId),
           time: this.nowTime(row.timestamp),
           timestamp: row.timestamp,
+          edited: !!row.edited,
         }));
         this.messagesLoading = false;
         this.scrollToLatestMessage();
@@ -356,6 +423,214 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     this.selectedUser = null;
     this.messageArray = [];
     this.messagesLoading = false;
+    this.chatMenuOpen = false;
+    this.chatSearchOpen = false;
+    this.chatSearchTerm = '';
+    this.messageMenuId = null;
+    this.messageMenuAbove = false;
+  }
+
+  onMessageBubbleClick(event: Event, msg: any) {
+    event.stopPropagation();
+    if (msg?.name !== this.currentUser?.name || !msg?._id) {
+      return;
+    }
+    this.settingsOpen = false;
+    this.accountMenuOpen = false;
+    this.chatMenuOpen = false;
+    const opening = this.messageMenuId !== msg._id;
+    this.messageMenuId = opening ? msg._id : null;
+    this.messageMenuAbove = false;
+
+    if (!opening) {
+      return;
+    }
+
+    const target = event.currentTarget as HTMLElement | null;
+    const wrap = target?.closest?.('.bubble-wrap') as HTMLElement | null;
+    const scroller = this.messagesContainer?.nativeElement;
+    if (wrap && scroller) {
+      const wrapRect = wrap.getBoundingClientRect();
+      const scrollerRect = scroller.getBoundingClientRect();
+      const spaceBelow = scrollerRect.bottom - wrapRect.bottom;
+      this.messageMenuAbove = spaceBelow < 140;
+    }
+
+    setTimeout(() => {
+      wrap?.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: 'smooth',
+      });
+    }, 0);
+  }
+
+  editMessage(msg: any) {
+    this.messageMenuId = null;
+    if (!msg?._id) return;
+
+    const dialogRef = this.dialog.open(EditMessageDialogComponent, {
+      width: '420px',
+      maxWidth: '92vw',
+      panelClass: 'talkzen-confirm-panel',
+      backdropClass: 'talkzen-confirm-backdrop',
+      autoFocus: 'dialog',
+      data: { _id: msg._id, message: msg.message },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) return;
+      const idx = this.messageArray.findIndex(
+        (m) => String(m._id) === String(result._id)
+      );
+      if (idx < 0) return;
+      this.messageArray[idx] = {
+        ...this.messageArray[idx],
+        message: result.message,
+        edited: true,
+      };
+      this.messageArray = [...this.messageArray];
+    });
+  }
+
+  deleteMessagePermanently(msg: any) {
+    this.messageMenuId = null;
+    if (!msg?._id) return;
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '92vw',
+      panelClass: 'talkzen-confirm-panel',
+      backdropClass: 'talkzen-confirm-backdrop',
+      autoFocus: 'dialog',
+      data: {
+        title: 'Delete message',
+        message:
+          'Permanently delete this message for everyone? This cannot be undone.',
+        confirmText: 'Delete permanently',
+        cancelText: 'Cancel',
+        icon: 'delete_forever',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.chatAppService.deleteMessage(msg._id).subscribe({
+        next: () => {
+          this.messageArray = this.messageArray.filter(
+            (m) => String(m._id || '') !== String(msg._id)
+          );
+        },
+        error: (err) => {
+          this.actionError =
+            err?.error?.message || 'Failed to delete message';
+        },
+      });
+    });
+  }
+
+  toggleChatMenu(event: Event) {
+    event.stopPropagation();
+    this.chatMenuOpen = !this.chatMenuOpen;
+    if (this.chatMenuOpen) {
+      this.settingsOpen = false;
+      this.accountMenuOpen = false;
+      this.messageMenuId = null;
+    }
+  }
+
+  openChatSearch() {
+    this.chatMenuOpen = false;
+    this.chatSearchOpen = true;
+  }
+
+  closeChatSearch() {
+    this.chatSearchOpen = false;
+    this.chatSearchTerm = '';
+  }
+
+  closeChatFromMenu() {
+    this.chatMenuOpen = false;
+    this.leaveChat();
+  }
+
+  clearChat() {
+    this.chatMenuOpen = false;
+    if (!this.selectedUser) return;
+
+    const peerName = this.selectedUser.name;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '92vw',
+      panelClass: 'talkzen-confirm-panel',
+      backdropClass: 'talkzen-confirm-backdrop',
+      autoFocus: 'dialog',
+      data: {
+        title: 'Clear chat',
+        message: `Clear this chat for you only? ${peerName} will still keep the full message history.`,
+        confirmText: 'Clear for me',
+        cancelText: 'Cancel',
+        icon: 'delete_sweep',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      const peer = this.userId(this.selectedUser);
+      this.chatAppService.clearChat(peer).subscribe({
+        next: () => {
+          this.messageArray = [];
+          const chat = this.chatUsers.find((u) => this.userId(u) === peer);
+          if (chat) {
+            chat.lastMessage = '';
+            chat.lastMessageTime = null;
+            chat.unreadCount = 0;
+            this.chatUsers = [...this.chatUsers];
+            if (this.activeTab === 'chats') {
+              this.applySearch();
+            }
+          }
+        },
+        error: (err) => {
+          this.actionError = err?.error?.message || 'Failed to clear chat';
+        },
+      });
+    });
+  }
+
+  deleteChat() {
+    this.chatMenuOpen = false;
+    if (!this.selectedUser) return;
+
+    const target = this.selectedUser;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '92vw',
+      panelClass: 'talkzen-confirm-panel',
+      backdropClass: 'talkzen-confirm-backdrop',
+      autoFocus: 'dialog',
+      data: {
+        title: 'Delete chat',
+        message: `Remove ${target.name} from your chats? Message history is kept for them, but they leave your chat list.`,
+        confirmText: 'Delete chat',
+        cancelText: 'Cancel',
+        icon: 'delete_forever',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.actionError = '';
+      this.chatAppService.unfollowContact(this.userId(target)).subscribe({
+        next: () => {
+          this.leaveChat();
+          this.refreshLists(false);
+        },
+        error: (err) => {
+          this.actionError = err?.error?.message || 'Failed to delete chat';
+        },
+      });
+    });
   }
 
   join(user: string, name: string) {
@@ -480,9 +755,16 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     };
 
     this.chatAppService.chatmsg(payload).subscribe({
-      next: () => {
-        this.chatAppService.sendMessage(payload);
-        this.messageArray.push(payload);
+      next: (res: any) => {
+        const saved = res?.data;
+        const msg = {
+          ...payload,
+          _id: saved?._id ? String(saved._id) : undefined,
+          timestamp: saved?.timestamp || payload.timestamp,
+          edited: false,
+        };
+        this.chatAppService.sendMessage(msg);
+        this.messageArray.push(msg);
         this.messageText = '';
         this.scrollToLatestMessage();
 
@@ -490,7 +772,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
           (u) => this.userId(u) === this.userId(this.selectedUser)
         );
         if (chat) {
-          chat.lastMessage = payload.message;
+          chat.lastMessage = msg.message;
           chat.lastMessageTime = new Date().toISOString();
           chat.lastMessageMine = true;
           this.chatUsers = [...this.chatUsers];
@@ -506,11 +788,36 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     });
   }
 
-  logout() {
+  logout(skipConfirm = false) {
     this.settingsOpen = false;
     this.accountMenuOpen = false;
-    this.chatAppService.logout();
-    this.router.navigate(['/']);
+
+    if (skipConfirm) {
+      this.chatAppService.logout();
+      this.router.navigate(['/']);
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '92vw',
+      panelClass: 'talkzen-confirm-panel',
+      backdropClass: 'talkzen-confirm-backdrop',
+      autoFocus: 'dialog',
+      data: {
+        title: 'Log out',
+        message: 'Are you sure you want to log out of Talkzen?',
+        confirmText: 'Log out',
+        cancelText: 'Cancel',
+        icon: 'logout',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.chatAppService.logout();
+      this.router.navigate(['/']);
+    });
   }
 
   toggleSettings() {
@@ -537,6 +844,9 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
   closeSettingsOnOutsideClick() {
     this.settingsOpen = false;
     this.accountMenuOpen = false;
+    this.chatMenuOpen = false;
+    this.messageMenuId = null;
+    this.messageMenuAbove = false;
   }
 
   openProfile() {
@@ -609,5 +919,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.messageSub?.unsubscribe();
+    this.messageUpdatedSub?.unsubscribe();
+    this.messageDeletedSub?.unsubscribe();
   }
 }

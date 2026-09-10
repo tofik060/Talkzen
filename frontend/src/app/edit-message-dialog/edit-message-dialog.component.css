@@ -1,0 +1,103 @@
+.edit-shell {
+  padding: 1.35rem 1.25rem 1.2rem;
+  font-family: "Figtree", sans-serif;
+  color: #1c2434;
+}
+
+.edit-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  color: #fff;
+  background: linear-gradient(135deg, #4f7cff 0%, #7b5cff 100%);
+}
+
+.edit-icon mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+p {
+  margin: 0 0 1rem;
+  color: #8a94a6;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #24304a;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e8edf5;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  font: inherit;
+  font-weight: 500;
+  color: #1c2434;
+  resize: vertical;
+  min-height: 96px;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: #4f7cff;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
+.error {
+  margin: 0.65rem 0 0;
+  color: #c45c4a;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+
+.btn-cancel,
+.btn-save {
+  border: none;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #f4f6fb;
+  color: #5b6578;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #4f7cff 0%, #7b5cff 100%);
+  color: #fff;
+}
+
+.btn-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

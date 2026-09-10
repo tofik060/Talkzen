@@ -164,6 +164,12 @@ export class ChatAppService {
     return this.http.delete(`${this.REST_API}/me`);
   }
 
+  clearChat(peerId: string) {
+    return this.http.delete(
+      `${this.REST_API}/message?peerId=${encodeURIComponent(peerId)}`
+    );
+  }
+
   hasAvatar(image?: string | null): boolean {
     return !!image && String(image).trim().length > 0;
   }
@@ -211,6 +217,18 @@ export class ChatAppService {
     return this.http.post(api_uri, payload);
   }
 
+  updateMessage(messageId: string, message: string) {
+    return this.http.put(`${this.REST_API}/message/${encodeURIComponent(messageId)}`, {
+      message,
+    });
+  }
+
+  deleteMessage(messageId: string) {
+    return this.http.delete(
+      `${this.REST_API}/message/${encodeURIComponent(messageId)}`
+    );
+  }
+
   markMessagesRead(peerId: string) {
     return this.http.post(`${this.REST_API}/message/read`, { peerId });
   }
@@ -232,6 +250,28 @@ export class ChatAppService {
       });
       return () => {
         this.socket.removeListener('receive');
+      };
+    });
+  }
+
+  onMessageUpdated(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket.on('message-updated', (data: any) => {
+        observer.next(data);
+      });
+      return () => {
+        this.socket.removeListener('message-updated');
+      };
+    });
+  }
+
+  onMessageDeleted(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket.on('message-deleted', (data: any) => {
+        observer.next(data);
+      });
+      return () => {
+        this.socket.removeListener('message-deleted');
       };
     });
   }

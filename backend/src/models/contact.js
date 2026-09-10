@@ -23,6 +23,20 @@ const contactSchema = new mongoose.Schema({
       ref: "user",
     },
   ],
+  // Clear chat for me only — hide older messages for that user
+  clearedAtBy: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user",
+        required: true,
+      },
+      at: {
+        type: Date,
+        required: true,
+      },
+    },
+  ],
   timestamp: {
     type: Date,
     default: Date.now,

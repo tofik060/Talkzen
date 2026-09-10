@@ -1,0 +1,27 @@
+<div class="edit-shell">
+  <div class="edit-icon" aria-hidden="true">
+    <mat-icon>edit</mat-icon>
+  </div>
+  <h2>Edit message</h2>
+  <p>Update your message. The other person will see the change.</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Message
+      <textarea
+        formControlName="message"
+        rows="4"
+        placeholder="Type your message"
+      ></textarea>
+    </label>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <div class="actions">
+      <button class="btn-cancel" type="button" (click)="close()">Cancel</button>
+      <button class="btn-save" type="submit" [disabled]="saving || form.invalid">
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </form>
+</div>
