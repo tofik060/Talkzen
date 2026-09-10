@@ -30,7 +30,11 @@ export class AuthGuard implements CanActivate {
         this.chatAppService.clearAuth();
         return this.router.createUrlTree(['/']);
       }),
-      catchError(() => {
+      catchError((err) => {
+        // Network / cold-start: keep local session so chat can still open
+        if (err?.status === 0 && this.chatAppService.getCurrentUser()?.name) {
+          return of(true);
+        }
         this.chatAppService.clearAuth();
         return of(this.router.createUrlTree(['/']));
       })

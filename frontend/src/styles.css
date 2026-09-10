@@ -16,6 +16,23 @@ app-root {
   overflow: hidden;
 }
 
+/* Mobile / tablet: allow page vertical scroll */
+@media (max-width: 820px) {
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  app-root {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+}
+
 .cdk-overlay-dark-backdrop.talkzen-confirm-backdrop {
   background: rgba(18, 22, 39, 0.55);
   backdrop-filter: blur(6px);
@@ -50,4 +67,3 @@ app-root {
     transform: translateY(0) scale(1);
   }
 }
-

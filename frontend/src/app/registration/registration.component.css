@@ -321,6 +321,10 @@
 
 @media (max-width: 720px) {
   .register-page {
+    height: auto;
+    min-height: calc(100vh - 56px);
+    max-height: none;
+    overflow-y: auto;
     padding: 0.7rem 0.75rem;
     align-items: flex-start;
   }

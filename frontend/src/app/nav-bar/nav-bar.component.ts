@@ -1,5 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationStart,
+  Router,
+} from '@angular/router';
 import { ChatAppService } from '../services/chat-app.service';
 import { filter, Subscription } from 'rxjs';
 
@@ -10,23 +16,50 @@ import { filter, Subscription } from 'rxjs';
 })
 export class NavBarComponent implements OnInit, OnDestroy {
   menuType: string = 'default';
-  showTopNav = true;
+  showTopNav = false;
   private sub?: Subscription;
 
   constructor(
     private router: Router,
     private chatAppService: ChatAppService
-  ) {}
-
-  ngOnInit(): void {
-    this.updateNavVisibility(this.router.url);
-    this.sub = this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe((e) => this.updateNavVisibility(e.urlAfterRedirects));
+  ) {
+    this.syncNavVisibility();
   }
 
-  private updateNavVisibility(url: string) {
-    this.showTopNav = !url.includes('/chat-application');
+  ngOnInit(): void {
+    this.syncNavVisibility();
+    this.sub = this.router.events
+      .pipe(
+        filter(
+          (e) =>
+            e instanceof NavigationStart ||
+            e instanceof NavigationEnd ||
+            e instanceof NavigationCancel ||
+            e instanceof NavigationError
+        )
+      )
+      .subscribe((e) => {
+        if (e instanceof NavigationStart) {
+          if (this.isChatPath(e.url)) {
+            this.showTopNav = false;
+          }
+          return;
+        }
+        this.syncNavVisibility();
+      });
+  }
+
+  private syncNavVisibility() {
+    const routerUrl = this.router.url || '';
+    const hash =
+      typeof window !== 'undefined'
+        ? window.location.hash.replace(/^#/, '')
+        : '';
+    this.showTopNav = !this.isChatPath(routerUrl) && !this.isChatPath(hash);
+  }
+
+  private isChatPath(path: string): boolean {
+    return (path || '').toLowerCase().includes('chat-application');
   }
 
   isLoggedIn(): boolean {

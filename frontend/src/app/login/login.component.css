@@ -238,6 +238,16 @@
   }
 }
 
+@media (max-width: 820px) {
+  .login-page {
+    height: auto;
+    min-height: calc(100vh - 56px);
+    max-height: none;
+    overflow-y: auto;
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 576px) {
   .login-page {
     padding: 1.5rem 1rem 2rem;
