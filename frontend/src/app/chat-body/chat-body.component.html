@@ -298,59 +298,69 @@
       </header>
 
       <section #messagesContainer class="conv-messages container">
-        <ng-container *ngFor="let msg of messageArray; let i = index">
-          <div
-            class="date-separator"
-            *ngIf="msg.name !== 'system' && showDateSeparator(i)"
-          >
-            <span>{{ dateLabel(msg.timestamp || msg.time) }}</span>
-          </div>
+        <div class="messages-loading" *ngIf="messagesLoading">
+          Loading messages…
+        </div>
 
-          <div class="system-msg" *ngIf="msg.name === 'system'">
-            {{ msg.message }}
-          </div>
-
-          <div
-            class="msg-row"
-            *ngIf="msg.name !== 'system'"
-            [class.mine]="msg.name === currentUser?.name"
-            [class.theirs]="msg.name !== currentUser?.name"
-          >
-            <img
-              class="bubble-avatar"
-              *ngIf="msg.name !== currentUser?.name && chatAppService.hasAvatar(selectedUser.image)"
-              [src]="chatAppService.getImageUrl(selectedUser.image)"
-              [alt]="selectedUser.name"
-            />
+        <ng-container *ngIf="!messagesLoading">
+          <ng-container *ngFor="let msg of messageArray; let i = index">
             <div
-              class="bubble-avatar avatar-initials"
-              *ngIf="msg.name !== currentUser?.name && !chatAppService.hasAvatar(selectedUser.image)"
-              aria-hidden="true"
+              class="date-separator"
+              *ngIf="msg.name !== 'system' && showDateSeparator(i)"
             >
-              {{ chatAppService.getInitials(selectedUser.name) }}
+              <span>{{ dateLabel(msg.timestamp || msg.time) }}</span>
             </div>
 
-            <div class="bubble">
-              <div class="bubble-text">{{ msg.message }}</div>
-              <div class="bubble-meta">
-                <span>{{ msg.time || '' }}</span>
-                <mat-icon *ngIf="msg.name === currentUser?.name">done_all</mat-icon>
+            <div class="system-msg" *ngIf="msg.name === 'system'">
+              {{ msg.message }}
+            </div>
+
+            <div
+              class="msg-row"
+              *ngIf="msg.name !== 'system'"
+              [class.mine]="msg.name === currentUser?.name"
+              [class.theirs]="msg.name !== currentUser?.name"
+            >
+              <img
+                class="bubble-avatar"
+                *ngIf="msg.name !== currentUser?.name && chatAppService.hasAvatar(selectedUser.image)"
+                [src]="chatAppService.getImageUrl(selectedUser.image)"
+                [alt]="selectedUser.name"
+              />
+              <div
+                class="bubble-avatar avatar-initials"
+                *ngIf="msg.name !== currentUser?.name && !chatAppService.hasAvatar(selectedUser.image)"
+                aria-hidden="true"
+              >
+                {{ chatAppService.getInitials(selectedUser.name) }}
+              </div>
+
+              <div class="bubble">
+                <div class="bubble-text">{{ msg.message }}</div>
+                <div class="bubble-meta">
+                  <span>{{ msg.time || '' }}</span>
+                  <mat-icon *ngIf="msg.name === currentUser?.name">done_all</mat-icon>
+                </div>
+              </div>
+
+              <img
+                class="bubble-avatar"
+                *ngIf="msg.name === currentUser?.name && chatAppService.hasAvatar(currentUser?.image)"
+                [src]="chatAppService.getImageUrl(currentUser?.image)"
+                [alt]="currentUser?.name"
+              />
+              <div
+                class="bubble-avatar avatar-initials"
+                *ngIf="msg.name === currentUser?.name && !chatAppService.hasAvatar(currentUser?.image)"
+                aria-hidden="true"
+              >
+                {{ chatAppService.getInitials(currentUser?.name) }}
               </div>
             </div>
+          </ng-container>
 
-            <img
-              class="bubble-avatar"
-              *ngIf="msg.name === currentUser?.name && chatAppService.hasAvatar(currentUser?.image)"
-              [src]="chatAppService.getImageUrl(currentUser?.image)"
-              [alt]="currentUser?.name"
-            />
-            <div
-              class="bubble-avatar avatar-initials"
-              *ngIf="msg.name === currentUser?.name && !chatAppService.hasAvatar(currentUser?.image)"
-              aria-hidden="true"
-            >
-              {{ chatAppService.getInitials(currentUser?.name) }}
-            </div>
+          <div class="messages-empty" *ngIf="!messageArray?.length">
+            No messages yet. Say hello!
           </div>
         </ng-container>
       </section>

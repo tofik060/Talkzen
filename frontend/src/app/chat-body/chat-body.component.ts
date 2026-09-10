@@ -48,6 +48,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
   }[] = [];
 
   listsLoading = false;
+  messagesLoading = false;
 
   private messageSub?: Subscription;
 
@@ -314,6 +315,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     }
     this.selectedUser = user;
     this.messageArray = [];
+    this.messagesLoading = true;
     this.join(this.currentUser.name, this.selectedUser.name);
     this.loadConversation();
     this.markSelectedRead();
@@ -322,29 +324,41 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
   loadConversation() {
     const me = this.userId(this.currentUser);
     const peer = this.userId(this.selectedUser);
-    if (!me || !peer) return;
+    if (!me || !peer) {
+      this.messagesLoading = false;
+      return;
+    }
 
-    this.chatAppService.chatmsgs(me, peer).subscribe((res: any) => {
-      const rows = res?.Data || [];
-      this.messageArray = rows.map((row: any) => ({
-        name: row.name,
-        message: row.message,
-        senderId: String(row.senderId),
-        receiverId: String(row.receiverId),
-        time: this.nowTime(row.timestamp),
-        timestamp: row.timestamp,
-      }));
-      this.scrollToLatestMessage();
+    this.messagesLoading = true;
+    this.chatAppService.chatmsgs(me, peer).subscribe({
+      next: (res: any) => {
+        const rows = res?.Data || [];
+        this.messageArray = rows.map((row: any) => ({
+          name: row.name,
+          message: row.message,
+          senderId: String(row.senderId),
+          receiverId: String(row.receiverId),
+          time: this.nowTime(row.timestamp),
+          timestamp: row.timestamp,
+        }));
+        this.messagesLoading = false;
+        this.scrollToLatestMessage();
+      },
+      error: () => {
+        this.messagesLoading = false;
+        this.messageArray = [];
+      },
     });
-  }
-
-  join(user: string, name: string) {
-    this.chatAppService.userConnect({ user, name });
   }
 
   leaveChat() {
     this.selectedUser = null;
     this.messageArray = [];
+    this.messagesLoading = false;
+  }
+
+  join(user: string, name: string) {
+    this.chatAppService.userConnect({ user, name });
   }
 
   sendRequest(user: any, event: Event) {

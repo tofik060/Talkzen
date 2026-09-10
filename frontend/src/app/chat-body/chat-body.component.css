@@ -656,6 +656,15 @@
   gap: 0.85rem;
 }
 
+.messages-loading,
+.messages-empty {
+  margin: auto;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  padding: 2rem 1rem;
+}
+
 .system-msg {
   align-self: center;
   color: var(--muted);
