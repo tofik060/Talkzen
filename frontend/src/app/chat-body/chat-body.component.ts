@@ -1,4 +1,11 @@
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { ChatAppService } from '../services/chat-app.service';
 import { Socket } from 'ngx-socket-io';
 import { Router } from '@angular/router';
@@ -14,6 +21,8 @@ import { ChangePasswordDialogComponent } from '../change-password-dialog/change-
   styleUrls: ['./chat-body.component.css'],
 })
 export class ChatBodyComponent implements OnInit, OnDestroy {
+  @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLElement>;
+
   activeTab: 'chats' | 'contacts' = 'chats';
 
   chatUsers: any[] = [];
@@ -84,11 +93,20 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
         time: data.time || this.nowTime(),
         timestamp: data.timestamp || new Date().toISOString(),
       });
+      this.scrollToLatestMessage();
 
       if (sender === this.userId(this.selectedUser) && receiver === me) {
         this.markSelectedRead();
       }
     });
+  }
+
+  private scrollToLatestMessage() {
+    setTimeout(() => {
+      const el = this.messagesContainer?.nativeElement;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+    }, 0);
   }
 
   private userId(user: any): string {
@@ -316,6 +334,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
         time: this.nowTime(row.timestamp),
         timestamp: row.timestamp,
       }));
+      this.scrollToLatestMessage();
     });
   }
 
@@ -450,6 +469,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
         this.chatAppService.sendMessage(payload);
         this.messageArray.push(payload);
         this.messageText = '';
+        this.scrollToLatestMessage();
 
         const chat = this.chatUsers.find(
           (u) => this.userId(u) === this.userId(this.selectedUser)
