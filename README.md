@@ -108,3 +108,4 @@ Then open [http://localhost:4200](http://localhost:4200) (API default: [http://l
 
 - [Frontend README](./frontend/README.md) — UI setup, routes, env  
 - [Backend README](./backend/README.md) — API routes, env, contact rules  
+- [Deploy on Render](./DEPLOY.md) — host frontend + backend on Render + MongoDB Atlas  
