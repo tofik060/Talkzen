@@ -160,6 +160,10 @@ export class ChatAppService {
     return this.http.post(`${this.REST_API}/change-password`, payload);
   }
 
+  deleteAccount() {
+    return this.http.delete(`${this.REST_API}/me`);
+  }
+
   hasAvatar(image?: string | null): boolean {
     return !!image && String(image).trim().length > 0;
   }

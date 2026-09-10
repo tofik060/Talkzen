@@ -232,6 +232,11 @@
   color: #e04545;
 }
 
+.settings-item .chevron-spacer {
+  width: 18px;
+  height: 18px;
+}
+
 .settings-divider {
   height: 1px;
   margin: 0.25rem 0.35rem;

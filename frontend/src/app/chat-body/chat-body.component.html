@@ -64,9 +64,9 @@
             <span>View Profile</span>
             <mat-icon class="chevron">chevron_right</mat-icon>
           </button>
-          <button type="button" class="settings-item" (click)="openChangePassword()">
-            <mat-icon>lock_outline</mat-icon>
-            <span>Change Password</span>
+          <button type="button" class="settings-item" (click)="openAccountMenu($event)">
+            <mat-icon>manage_accounts</mat-icon>
+            <span>Account</span>
             <mat-icon class="chevron">chevron_right</mat-icon>
           </button>
           <div class="settings-divider"></div>
@@ -76,10 +76,28 @@
           </button>
         </div>
 
+        <div class="settings-menu account-menu" *ngIf="accountMenuOpen">
+          <button type="button" class="settings-item" (click)="backToSettings($event)">
+            <mat-icon>arrow_back</mat-icon>
+            <span>Account</span>
+            <span class="chevron-spacer"></span>
+          </button>
+          <div class="settings-divider"></div>
+          <button type="button" class="settings-item" (click)="openChangePassword()">
+            <mat-icon>lock_outline</mat-icon>
+            <span>Change Password</span>
+            <mat-icon class="chevron">chevron_right</mat-icon>
+          </button>
+          <button type="button" class="settings-item danger" (click)="deleteAccount()">
+            <mat-icon>person_off</mat-icon>
+            <span>Delete Account</span>
+          </button>
+        </div>
+
         <button
           class="settings-btn"
           type="button"
-          [class.open]="settingsOpen"
+          [class.open]="settingsOpen || accountMenuOpen"
           (click)="toggleSettings()"
           aria-label="Settings"
         >
@@ -475,9 +493,9 @@
           <span>View Profile</span>
           <mat-icon class="chevron">chevron_right</mat-icon>
         </button>
-        <button type="button" class="settings-item" (click)="openChangePassword()">
-          <mat-icon>lock_outline</mat-icon>
-          <span>Change Password</span>
+        <button type="button" class="settings-item" (click)="openAccountMenu($event)">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Account</span>
           <mat-icon class="chevron">chevron_right</mat-icon>
         </button>
         <div class="settings-divider"></div>
@@ -487,10 +505,31 @@
         </button>
       </div>
 
+      <div
+        class="settings-menu mobile-settings-menu account-menu"
+        *ngIf="accountMenuOpen"
+      >
+        <button type="button" class="settings-item" (click)="backToSettings($event)">
+          <mat-icon>arrow_back</mat-icon>
+          <span>Account</span>
+          <span class="chevron-spacer"></span>
+        </button>
+        <div class="settings-divider"></div>
+        <button type="button" class="settings-item" (click)="openChangePassword()">
+          <mat-icon>lock_outline</mat-icon>
+          <span>Change Password</span>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </button>
+        <button type="button" class="settings-item danger" (click)="deleteAccount()">
+          <mat-icon>person_off</mat-icon>
+          <span>Delete Account</span>
+        </button>
+      </div>
+
       <button
         class="mobile-nav-item"
         type="button"
-        [class.active]="settingsOpen"
+        [class.active]="settingsOpen || accountMenuOpen"
         (click)="toggleSettings()"
         aria-label="Settings"
       >

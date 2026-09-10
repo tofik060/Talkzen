@@ -38,6 +38,7 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
 
   public messageText = '';
   public settingsOpen = false;
+  public accountMenuOpen = false;
   public messageArray: {
     name: string;
     message: string;
@@ -507,23 +508,40 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
 
   logout() {
     this.settingsOpen = false;
+    this.accountMenuOpen = false;
     this.chatAppService.logout();
     this.router.navigate(['/']);
   }
 
   toggleSettings() {
+    if (this.accountMenuOpen) {
+      this.accountMenuOpen = false;
+      return;
+    }
     this.settingsOpen = !this.settingsOpen;
+  }
+
+  openAccountMenu(event: Event) {
+    event.stopPropagation();
+    this.settingsOpen = false;
+    this.accountMenuOpen = true;
+  }
+
+  backToSettings(event: Event) {
+    event.stopPropagation();
+    this.accountMenuOpen = false;
+    this.settingsOpen = true;
   }
 
   @HostListener('document:click')
   closeSettingsOnOutsideClick() {
-    if (this.settingsOpen) {
-      this.settingsOpen = false;
-    }
+    this.settingsOpen = false;
+    this.accountMenuOpen = false;
   }
 
   openProfile() {
     this.settingsOpen = false;
+    this.accountMenuOpen = false;
     const dialogRef = this.dialog.open(ProfileDialogComponent, {
       width: '440px',
       maxWidth: '92vw',
@@ -544,11 +562,48 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
 
   openChangePassword() {
     this.settingsOpen = false;
+    this.accountMenuOpen = false;
     this.dialog.open(ChangePasswordDialogComponent, {
       width: '420px',
       maxWidth: '92vw',
       panelClass: 'talkzen-confirm-panel',
       backdropClass: 'talkzen-confirm-backdrop',
+    });
+  }
+
+  deleteAccount() {
+    this.settingsOpen = false;
+    this.accountMenuOpen = false;
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      maxWidth: '92vw',
+      panelClass: 'talkzen-confirm-panel',
+      backdropClass: 'talkzen-confirm-backdrop',
+      autoFocus: 'dialog',
+      data: {
+        title: 'Delete account',
+        message:
+          'This permanently deletes your account, chats, and contacts. This cannot be undone.',
+        confirmText: 'Delete account',
+        cancelText: 'Keep account',
+        icon: 'person_off',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.chatAppService.deleteAccount().subscribe({
+        next: () => {
+          this.chatAppService.logout();
+          this.router.navigate(['/']);
+        },
+        error: (err) => {
+          this.actionError =
+            err?.error?.message || 'Failed to delete account';
+        },
+      });
     });
   }
 

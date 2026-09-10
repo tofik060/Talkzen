@@ -970,6 +970,40 @@ app.put("/api/me", authMiddleware, async (req, res) => {
   }
 });
 
+app.delete("/api/me", authMiddleware, async (req, res) => {
+  try {
+    const me = String(req.user.id);
+    if (!mongoose.Types.ObjectId.isValid(me)) {
+      return res.status(400).json({
+        message: "Invalid user",
+        status: 400,
+      });
+    }
+
+    const meId = new mongoose.Types.ObjectId(me);
+
+    await Promise.all([
+      Message.deleteMany({
+        $or: [{ senderId: meId }, { receiverId: meId }],
+      }),
+      Contact.deleteMany({
+        $or: [{ requester: meId }, { recipient: meId }],
+      }),
+      user.findByIdAndDelete(meId),
+    ]);
+
+    res.json({
+      status: 200,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      status: 500,
+    });
+  }
+});
+
 app.post("/api/change-password", authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
