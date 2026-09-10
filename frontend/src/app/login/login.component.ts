@@ -34,6 +34,11 @@ export class LoginComponent {
         }
       },
       error: (err) => {
+        if (err?.status === 0) {
+          this.errorMessage =
+            'Cannot reach API (CORS or network). Check frontEnd_URL on the server.';
+          return;
+        }
         this.errorMessage =
           err?.error?.message || 'Invalid email or password';
       },

@@ -2,7 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const crypto = require("crypto");
 const port = process.env.PORT || 3000;
-const frontEndUrl = process.env.frontEnd_URL || "http://localhost:4200";
+const allowedOrigins = (
+  process.env.frontEnd_URL || "http://localhost:4200"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 require("./db/conn");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -44,11 +49,15 @@ function hasUnfollowed(link, userId) {
   return unfollowedByIds(link).includes(String(userId));
 }
 
+function isAllowedOrigin(origin) {
+  return !origin || allowedOrigins.includes(origin);
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: frontEndUrl,
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -58,7 +67,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: frontEndUrl,
+    origin: function (origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
   })
 );
@@ -126,8 +141,15 @@ app.post("/api/user-register", upload, async (req, res) => {
       });
     }
   } catch (error) {
+    if (error && error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || "field";
+      return res.status(409).json({
+        message: `${field} already exists. Use a different ${field}.`,
+        status: 409,
+      });
+    }
     return res.status(500).json({
-      message: "Not register",
+      message: error?.message || "Not register",
       status: 500,
     });
   }

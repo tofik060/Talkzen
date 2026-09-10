@@ -92,13 +92,18 @@ export class RegistrationComponent implements OnInit {
       formData.append('image', this.selectedAvatar || '');
       this.chatAppService.registration(formData).subscribe({
         next: (res: any) => {
-          if (res?.status === 200) {
+          if (res?.status === 200 || res?.message === 'Successfully register') {
             this.router.navigate(['/']);
-          } else {
-            this.errorMessage = res?.message || 'Registration failed';
+            return;
           }
+          this.errorMessage = res?.message || 'Registration failed';
         },
         error: (err) => {
+          if (err?.status === 0) {
+            this.errorMessage =
+              'Cannot reach API (CORS or network). Check frontEnd_URL on the server.';
+            return;
+          }
           this.errorMessage = err?.error?.message || 'Registration failed';
         },
       });

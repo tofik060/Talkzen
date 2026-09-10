@@ -62,7 +62,7 @@ Replace `USER`, `PASSWORD`, and keep / add database name `chat_application`.
 | `DB_URI` | your Atlas connection string |
 | `JWT_SECRET` | a long random secret |
 | `JWT_EXPIRES_IN` | `24h` |
-| `frontEnd_URL` | leave as `http://localhost:4200` for now; update after frontend URL exists |
+| `frontEnd_URL` | `https://talkzen-web.onrender.com,http://localhost:4200` (comma-separated OK; must include your Static Site URL) |
 | `Backend_URL` | `https://talkzen-api.onrender.com/api` (use your real service URL) |
 | `socket_URI` | `https://talkzen-api.onrender.com` |
 
@@ -116,7 +116,7 @@ This repo already includes `src/_redirects` (`/* /index.html 200`) so refresh on
 1. Backend service → **Environment** → set:
 
 ```text
-frontEnd_URL=https://talkzen-web.onrender.com
+frontEnd_URL=https://talkzen-web.onrender.com,http://localhost:4200
 ```
 
 2. Update `environment.prod.ts` `frontEnd_URL` to the same URL if you have not already, then **push** and let the Static Site auto-redeploy (or Manual Deploy).
@@ -145,7 +145,7 @@ You can also use Render Blueprints later; manual setup above is enough for the f
 | Problem | Fix |
 |---------|-----|
 | Frontend build fails (`ng` not found) | Use build command with `--include=dev` as above |
-| API CORS errors | `frontEnd_URL` must exactly match the Static Site URL (https, no trailing slash) |
+| API CORS errors | `frontEnd_URL` must include the Static Site URL exactly (`https://…`, no trailing slash). Comma-separate multiple origins if needed. |
 | DB connection failed | Check Atlas user/password, Network Access `0.0.0.0/0`, and `DB_URI` |
 | Socket not connecting | Confirm `socket_URI` is the backend URL (no `/api`) |
 | Uploaded images disappear | Render disk is ephemeral; prefer avatar assets paths |
