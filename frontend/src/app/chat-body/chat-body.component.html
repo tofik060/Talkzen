@@ -152,7 +152,10 @@
           </div>
         </button>
 
-        <div class="list-empty" *ngIf="!filteredUsers?.length">
+        <div class="list-empty" *ngIf="listsLoading && !filteredUsers?.length">
+          Loading chats…
+        </div>
+        <div class="list-empty" *ngIf="!listsLoading && !filteredUsers?.length">
           No chats yet. Open Contacts, send a request, and chat after they accept.
         </div>
       </ng-container>
@@ -234,7 +237,10 @@
           </div>
         </div>
 
-        <div class="list-empty" *ngIf="!filteredUsers?.length">
+        <div class="list-empty" *ngIf="listsLoading && !filteredUsers?.length">
+          Loading contacts…
+        </div>
+        <div class="list-empty" *ngIf="!listsLoading && !filteredUsers?.length">
           No contacts found
         </div>
       </ng-container>

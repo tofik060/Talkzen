@@ -18,6 +18,25 @@ export class AuthGuard implements CanActivate {
       return of(this.router.createUrlTree(['/']));
     }
 
+    // Open chat immediately from cached session; refresh profile in background
+    const cached = this.chatAppService.getCurrentUser();
+    if (cached?.name) {
+      this.chatAppService.getMe().subscribe({
+        next: (res: any) => {
+          if (res?.status === 200 && res?.userData) {
+            const token = this.chatAppService.getToken();
+            if (token) {
+              this.chatAppService.setAuth(token, res.userData);
+            }
+          }
+        },
+        error: (err) => {
+          console.error(err);
+        },
+      });
+      return of(true);
+    }
+
     return this.chatAppService.getMe().pipe(
       map((res: any) => {
         if (res?.status === 200 && res?.userData) {
@@ -30,11 +49,7 @@ export class AuthGuard implements CanActivate {
         this.chatAppService.clearAuth();
         return this.router.createUrlTree(['/']);
       }),
-      catchError((err) => {
-        // Network / cold-start: keep local session so chat can still open
-        if (err?.status === 0 && this.chatAppService.getCurrentUser()?.name) {
-          return of(true);
-        }
+      catchError(() => {
         this.chatAppService.clearAuth();
         return of(this.router.createUrlTree(['/']));
       })

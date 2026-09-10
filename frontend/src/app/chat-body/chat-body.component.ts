@@ -38,6 +38,8 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
     receiverId?: string;
   }[] = [];
 
+  listsLoading = false;
+
   private messageSub?: Subscription;
 
   constructor(
@@ -56,6 +58,9 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
 
     this.userName = savedUser.name;
     this.currentUser = savedUser;
+    this.showScreen = true;
+    this.chatAppService.userConnect(this.userName);
+    this.chatAppService.wakeApi();
     this.refreshLists();
 
     this.messageSub = this.chatAppService.getMessage().subscribe((data: any) => {
@@ -162,20 +167,16 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
 
   refreshLists(keepSelection = true) {
     const selectedId = keepSelection ? this.userId(this.selectedUser) : '';
+    this.listsLoading = true;
+    this.actionError = '';
 
     forkJoin({
-      me: this.chatAppService.getMe(),
       chats: this.chatAppService.getChats(),
       contacts: this.chatAppService.getContacts(),
     }).subscribe({
       next: (res: any) => {
-        this.currentUser = res?.me?.userData || this.currentUser;
-        if (this.currentUser) {
-          this.userName = this.currentUser.name;
-          localStorage.setItem('auth_user', JSON.stringify(this.currentUser));
-          this.chatAppService.userConnect(this.currentUser.name);
-          this.showScreen = true;
-        }
+        this.listsLoading = false;
+        this.showScreen = true;
 
         this.chatUsers = res?.chats?.chats || [];
         this.contactUsers = res?.contacts?.contacts || [];
@@ -193,7 +194,11 @@ export class ChatBodyComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        console.error('Failed to load contacts/chats', err);
+        this.listsLoading = false;
+        this.actionError =
+          err?.status === 0
+            ? 'Connecting to server… try again in a moment.'
+            : err?.error?.message || 'Failed to load chats';
         if (err?.status === 401) {
           this.logout();
         }

@@ -89,6 +89,12 @@ export class ChatAppService {
     return this.http.get(`${this.REST_API}/chats`);
   }
 
+  /** Ping API early so Render free tier can wake before chat lists load */
+  wakeApi(): void {
+    const base = this.socket_uri || this.REST_API.replace(/\/api\/?$/, '');
+    fetch(base + '/', { method: 'GET', mode: 'no-cors' }).catch(() => {});
+  }
+
   sendContactRequest(userId: string) {
     return this.http.post(`${this.REST_API}/contacts/request`, { userId });
   }

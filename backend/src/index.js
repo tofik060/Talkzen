@@ -25,6 +25,7 @@ const Contact = require("./models/contact");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const authMiddleware = require("./middleware/auth");
 
 function pairFilter(userA, userB) {
@@ -517,7 +518,7 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
     const links = await Contact.find({
       status: { $in: ["accepted", "unfollowed"] },
       $or: [{ requester: me }, { recipient: me }],
-    });
+    }).lean();
 
     // Keep chats I did not leave. If I unfollowed, hide. If peer unfollowed me, keep.
     // Legacy mutual unfollows (no unfollowedBy) stay hidden for both.
@@ -530,59 +531,97 @@ app.get("/api/chats", authMiddleware, async (req, res) => {
     });
 
     const peerIds = visibleLinks.map((link) =>
-      String(link.requester) === me ? link.recipient : link.requester
+      String(link.requester) === me ? String(link.recipient) : String(link.requester)
     );
 
-    const chats = await user
-      .find({ _id: { $in: peerIds } })
-      .select("-password -confirmPassword");
+    if (!peerIds.length) {
+      return res.json({ status: 200, chats: [] });
+    }
 
-    const enriched = await Promise.all(
-      chats.map(async (u) => {
-        const peerId = String(u._id);
-        const link = visibleLinks.find((l) => {
-          const peer =
-            String(l.requester) === me
-              ? String(l.recipient)
-              : String(l.requester);
-          return peer === peerId;
-        });
+    const peerObjectIds = peerIds
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => new mongoose.Types.ObjectId(id));
+    const meObjectId = new mongoose.Types.ObjectId(me);
 
-        const peerUnfollowed = link ? hasUnfollowed(link, peerId) : false;
-        const canMessage = link?.status === "accepted" && !peerUnfollowed;
+    const [chats, lastMessages, unreadCounts] = await Promise.all([
+      user.find({ _id: { $in: peerObjectIds } }).select("-password -confirmPassword").lean(),
+      Message.aggregate([
+        {
+          $match: {
+            $or: [
+              { senderId: meObjectId, receiverId: { $in: peerObjectIds } },
+              { senderId: { $in: peerObjectIds }, receiverId: meObjectId },
+            ],
+          },
+        },
+        { $sort: { timestamp: -1 } },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                { $eq: ["$senderId", meObjectId] },
+                "$receiverId",
+                "$senderId",
+              ],
+            },
+            message: { $first: "$message" },
+            timestamp: { $first: "$timestamp" },
+            senderId: { $first: "$senderId" },
+          },
+        },
+      ]),
+      Message.aggregate([
+        {
+          $match: {
+            senderId: { $in: peerObjectIds },
+            receiverId: meObjectId,
+            $or: [{ read: false }, { read: { $exists: false } }],
+          },
+        },
+        { $group: { _id: "$senderId", count: { $sum: 1 } } },
+      ]),
+    ]);
 
-        const lastMessage = await Message.findOne({
-          $or: [
-            { senderId: me, receiverId: peerId },
-            { senderId: peerId, receiverId: me },
-          ],
-        }).sort({ timestamp: -1 });
-
-        const unreadCount = await Message.countDocuments({
-          senderId: peerId,
-          receiverId: me,
-          $or: [{ read: false }, { read: { $exists: false } }],
-        });
-
-        return {
-          ...u.toObject(),
-          contactStatus: canMessage
-            ? "accepted"
-            : peerUnfollowed
-              ? "unfollowed_by_peer"
-              : link?.status || "accepted",
-          contactId: link?._id || null,
-          canMessage,
-          peerUnfollowed,
-          unreadCount,
-          lastMessage: lastMessage?.message || "",
-          lastMessageTime: lastMessage?.timestamp || null,
-          lastMessageMine: lastMessage
-            ? String(lastMessage.senderId) === me
-            : false,
-        };
-      })
+    const lastByPeer = new Map(
+      lastMessages.map((row) => [String(row._id), row])
     );
+    const unreadByPeer = new Map(
+      unreadCounts.map((row) => [String(row._id), row.count])
+    );
+    const linkByPeer = new Map();
+    visibleLinks.forEach((link) => {
+      const peer =
+        String(link.requester) === me
+          ? String(link.recipient)
+          : String(link.requester);
+      linkByPeer.set(peer, link);
+    });
+
+    const enriched = chats.map((u) => {
+      const peerId = String(u._id);
+      const link = linkByPeer.get(peerId);
+      const peerUnfollowed = link ? hasUnfollowed(link, peerId) : false;
+      const canMessage = link?.status === "accepted" && !peerUnfollowed;
+      const lastMessage = lastByPeer.get(peerId);
+
+      return {
+        ...u,
+        contactStatus: canMessage
+          ? "accepted"
+          : peerUnfollowed
+            ? "unfollowed_by_peer"
+            : link?.status || "accepted",
+        contactId: link?._id || null,
+        canMessage,
+        peerUnfollowed,
+        unreadCount: unreadByPeer.get(peerId) || 0,
+        lastMessage: lastMessage?.message || "",
+        lastMessageTime: lastMessage?.timestamp || null,
+        lastMessageMine: lastMessage
+          ? String(lastMessage.senderId) === me
+          : false,
+      };
+    });
 
     enriched.sort((a, b) => {
       const ta = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
