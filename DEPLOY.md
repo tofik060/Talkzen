@@ -99,7 +99,7 @@ Commit and push this change.
 |-------|--------|
 | **Name** | `talkzen-web` |
 | **Root Directory** | `frontend` |
-| **Build Command** | `npm install --include=dev && npx ng build --configuration production` |
+| **Build Command** | `npm install --include=dev --legacy-peer-deps && npx ng build --configuration production` |
 | **Publish Directory** | `dist/chat-application` |
 
 3. Create the static site and wait for the build.
