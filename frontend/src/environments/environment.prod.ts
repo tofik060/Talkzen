@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  // Replace these after you create Render services (see DEPLOY.md)
-  frontEnd_URL: 'https://YOUR-FRONTEND.onrender.com',
-  Backend_URL: 'https://YOUR-BACKEND.onrender.com/api',
-  socket_URI: 'https://YOUR-BACKEND.onrender.com',
+  // Update frontEnd_URL after Static Site is created
+  frontEnd_URL: 'https://talkzen-web.onrender.com',
+  Backend_URL: 'https://talkzen-api.onrender.com/api',
+  socket_URI: 'https://talkzen-api.onrender.com',
 };
