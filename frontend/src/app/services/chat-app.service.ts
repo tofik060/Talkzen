@@ -120,6 +120,18 @@ export class ChatAppService {
     return this.http.post(api_uri, { email, password });
   }
 
+  forgotPassword(email: string) {
+    return this.http.post(`${this.REST_API}/forgot-password`, { email });
+  }
+
+  resetPassword(payload: {
+    token: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) {
+    return this.http.post(`${this.REST_API}/reset-password`, payload);
+  }
+
   getMe() {
     return this.http.get(`${this.REST_API}/me`);
   }

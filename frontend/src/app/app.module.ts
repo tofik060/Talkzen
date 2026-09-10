@@ -23,6 +23,8 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { ProfileDialogComponent } from './profile-dialog/profile-dialog.component';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { environment } from '../environments/environment';
 
 const config: SocketIoConfig = {
@@ -48,6 +50,8 @@ const config: SocketIoConfig = {
     ConfirmDialogComponent,
     ProfileDialogComponent,
     ChangePasswordDialogComponent,
+    ForgotPasswordComponent,
+    ResetPasswordComponent,
   ],
   imports: [
     BrowserModule,

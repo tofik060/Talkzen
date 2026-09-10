@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const crypto = require("crypto");
 const port = process.env.PORT || 3000;
 const frontEndUrl = process.env.frontEnd_URL || "http://localhost:4200";
 require("./db/conn");
@@ -176,6 +177,127 @@ app.post("/api/login", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Invalid Details",
+      status: 500,
+    });
+  }
+});
+
+app.post("/api/forgot-password", async (req, res) => {
+  try {
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+        status: 400,
+      });
+    }
+
+    const existingUser = await user.findOne({
+      $expr: { $eq: [{ $toLower: "$email" }, email] },
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({
+        message: "No account found with this email",
+        status: 404,
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    existingUser.resetToken = hashedToken;
+    existingUser.resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    await existingUser.save();
+
+    res.json({
+      status: 200,
+      message: "Reset token created. Set your new password to continue.",
+      resetToken,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || "Failed to start password reset",
+      status: 500,
+    });
+  }
+});
+
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const token = String(req.body.token || "");
+    const newPassword = String(req.body.newPassword || "");
+    const confirmPassword = String(req.body.confirmPassword || "");
+
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "Token and both password fields are required",
+        status: 400,
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match",
+        status: 400,
+      });
+    }
+
+    if (
+      !/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(
+        newPassword
+      )
+    ) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters and include a letter, number, and symbol",
+        status: 400,
+      });
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const existingUser = await user.findOne({
+      resetToken: hashedToken,
+      resetTokenExpiry: { $gt: new Date() },
+    });
+
+    if (!existingUser) {
+      return res.status(400).json({
+        message: "Reset link is invalid or has expired",
+        status: 400,
+      });
+    }
+
+    const samePassword = await bcrypt.compare(
+      newPassword,
+      existingUser.password
+    );
+    if (samePassword) {
+      return res.status(400).json({
+        message: "You already have this password",
+        status: 400,
+      });
+    }
+
+    existingUser.password = newPassword;
+    existingUser.confirmPassword = confirmPassword;
+    existingUser.resetToken = null;
+    existingUser.resetTokenExpiry = null;
+    await existingUser.save();
+
+    res.json({
+      status: 200,
+      message: "Password reset successfully. You can sign in now.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || "Failed to reset password",
       status: 500,
     });
   }
