@@ -1,27 +1,122 @@
-# ChatApplication
+# Talkzen (Frontend)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.2.3.
+Angular frontend for **Talkzen** — sign in, register, manage contacts, and chat in real time.
 
-## Development server
+Built with **Angular 16**, **Angular Material**, **RxJS**, and **Socket.IO client**.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+---
 
-## Code scaffolding
+## Features
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Auth
+- Sign in / sign up screens
+- Registration with name, email, phone, location, password, and optional avatar
+- Password rules: 8+ characters, letter, number, and symbol; confirm password must match
+- JWT stored in `localStorage`; attached to HTTP requests via interceptor
+- Auth guard on the chat route
 
-## Build
+### Contacts
+- Contacts tab lists all other users
+- Send, accept, decline, or cancel contact requests
+- Red badge on Contacts for incoming pending requests
+- Accepted users move into Chats
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+### Chats
+- Chats tab shows connected users (and peers who unfollowed you, read-only)
+- Search chats/contacts
+- Conversation view with avatars (or initials), bubbles, and timestamps
+- Date separators: **Today**, **Yesterday**, or a full date
+- Unread badges on the Chats rail and on each chat row
+- Live messages over Socket.IO; history loaded from the API
+- Composer hidden if the peer unfollowed you
 
-## Running unit tests
+### Profile & settings
+- Settings menu: View Profile, Change Password, Log Out
+- Edit profile details and avatar
+- Change password dialog (blocks using the same password again)
+- Confirm dialog for unfollow
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+---
 
-## Running end-to-end tests
+## Project structure
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+```
+src/app/
+  login/
+  registration/
+  chat-body/                 Main chat UI
+  confirm-dialog/
+  profile-dialog/
+  change-password-dialog/
+  services/chat-app.service.ts
+  guards/auth.guard.ts
+  interceptors/auth.interceptor.ts
+  environments/
+```
 
-## Further help
+---
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+## Prerequisites
+
+- Node.js (LTS)
+- Angular CLI 16
+- Running Talkzen backend (default `http://localhost:3000`)
+
+---
+
+## Setup
+
+```bash
+cd frontend
+npm install
+ng serve
+```
+
+Open [http://localhost:4200](http://localhost:4200).
+
+---
+
+## Environment
+
+Configure URLs in `src/environments/environment.ts`:
+
+```ts
+export const environment = {
+  production: false,
+  frontEnd_URL: 'http://localhost:4200',
+  Backend_URL: 'http://localhost:3000/api',
+  socket_URI: 'http://localhost:3000',
+};
+```
+
+Production builds use `environment.prod.ts` (via `angular.json` file replacements).
+
+---
+
+## Routes
+
+| Path | Screen | Access |
+|------|--------|--------|
+| `/` | Sign in | Public |
+| `/registration` | Sign up | Public |
+| `/chat-application` | Chat app | JWT required |
+
+---
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `ng serve` / `npm start` | Dev server |
+| `ng build` | Production build → `dist/chat-application` |
+| `ng test` | Unit tests |
+
+---
+
+## Tech stack
+
+- Angular 16
+- Angular Material
+- Socket.IO client / ngx-socket-io
+- RxJS
+- Bootstrap (layout helpers)
